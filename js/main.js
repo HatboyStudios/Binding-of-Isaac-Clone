@@ -10,6 +10,7 @@ const GAME_STATES = {
 
 var current_state = 0;
 var background_color;
+var player;
 
 function setup() {
   let screen = createCanvas(400, 400);
@@ -37,9 +38,13 @@ function setup() {
       deathMenuSetup();
     break;
   }
+
+  player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
 }
 
 function update() {
   clear();
   background(background_color);
+
+  player.draw();
 }
