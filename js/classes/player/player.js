@@ -17,6 +17,8 @@ class Player {
         this.defense = defense;
         this.range = range;
         this.modifiers = modifiers;
+
+        this.direction = 'down';
     }
 
     playerMovement() {
@@ -35,21 +37,25 @@ class Player {
         } else {
             this.stamina = Math.min(this.stamina + 0.3, this.base_stamina);
         }
-
+ 
         if (keyIsDown('w') || keyIsDown('W')) {
             this.y -= this.speed;
+            this.direction = 'up';
         }
 
         if (keyIsDown('s') || keyIsDown('S')) {
             this.y += this.speed;
+            this.direction = 'down';
         }
 
         if (keyIsDown('a') || keyIsDown('A')) {
             this.x -= this.speed;
+            this.direction = 'left';
         }
 
         if (keyIsDown('d') || keyIsDown('D')) {
             this.x += this.speed;
+            this.direction = 'right';
         }
     }
 
@@ -71,6 +77,7 @@ class Player {
 
     draw() {
         this.playerMovement();
+        fill(255, 255, 255); 
         square(this.x, this.y, 40, 10);
     }
 }

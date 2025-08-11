@@ -10,7 +10,10 @@ const GAME_STATES = {
 
 var current_state = 0;
 var background_color;
+
 var player;
+let pistol;
+let enemy;
 
 function setup() {
   let screen = createCanvas(400, 400);
@@ -40,11 +43,33 @@ function setup() {
   }
 
   player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
+
+  pistol = new Pistol(60);
+  enemy = new Following(100, 150, player);
 }
 
 function update() {
   clear();
   background(background_color);
+}
 
+function draw() {
+  update();
+
+  pistol.handleWeaponInput();
   player.draw();
+
+  enemy.draw();
+}
+
+function keyPressed() {
+  if (key === '1') {
+    pistol = new Pistol(pistol.ammo_manager.total_ammo);
+    console.log("Normal Pistol")
+  }
+
+  if (key === '2') {
+    pistol = new AutoPistol(pistol.ammo_manager.total_ammo);
+    console.log("Auto Pistol")
+  }
 }
