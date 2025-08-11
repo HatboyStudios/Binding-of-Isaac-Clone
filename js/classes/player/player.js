@@ -71,6 +71,6 @@ class Player {
 
     draw() {
         this.playerMovement();
-        square(this.x, this.y, 40, 10);
+        square(this.x-20, this.y-5, 40, 10);
     }
 }
