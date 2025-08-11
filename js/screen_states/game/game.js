@@ -24,8 +24,6 @@ function gameSetup() {
       saved_map_data = map_data;
       saved_map = map;
 
-      background_color = map_data[0].room_color;
-
       new_room = map_data[0];
     }
   }
@@ -35,6 +33,8 @@ function gameSetup() {
   console.log(new_room);
 
   current_room = new_room;
+
+  background_color = current_room.room_color
 
   doors = findRoomDoors(map, new_room);
   console.log(doors);
