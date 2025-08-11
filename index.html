@@ -2,14 +2,24 @@
 <html>
   <header>
     <!-- p5.js api -->
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.8/lib/p5.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.8/lib/addons/p5.sound.min.js"></script>
-
+    <script src="https://q5js.org/q5.js"></script>
     <!-- p5Play.js api -->
     <script src="https://p5play.org/v3/planck.min.js"></script>
     <script src="https://p5play.org/v3/p5play.js"></script>
 
     <!-- game code -->
+     <!-- core function code -->
+      <script src="js/core_functions/newScene.js"></script>
+
+     <!-- screen state code -->
+      <script src="js/screen_states/start_menu/start_menu.js"></script>
+      <script src="js/screen_states/game_menu/game_menu.js"></script>
+      <script src="js/screen_states/game/game.js"></script>
+      <script src="js/screen_states/inventory/inventory.js"></script>
+      <script src="js/screen_states/pause_menu/pause_menu.js"></script>
+      <script src="js/screen_states/settings_menu/settings_menu.js"></script>
+      <script src="js/screen_states/death_menu/death_menu.js"></script>
+    
   </header>
   <body>
     <!-- main.js is the only file we have in body!!! -->
