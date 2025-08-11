@@ -26,11 +26,6 @@ class Player {
 
         const isMoving = keyIsDown('w') || keyIsDown('W') || keyIsDown('s') || keyIsDown('S') || keyIsDown('a') || keyIsDown('A') || keyIsDown('d') || keyIsDown('D');
 
-        if (this.stamina <= 0) {
-            this.stamina += 0.1;
-             console.log("reg", this.stamina)
-        }
-
         if (keyIsDown('Shift') && this.stamina > 0 && isMoving) {
             this.speed += 1.2; 
             this.stamina -= 0.5;
@@ -76,7 +71,6 @@ class Player {
     }
 
     draw() {
-        this.playerMovement();
         fill(255, 255, 255); 
         square(this.x, this.y, 40, 10);
     }

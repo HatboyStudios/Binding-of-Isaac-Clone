@@ -8,68 +8,99 @@ const GAME_STATES = {
   DEATH: 6
 };
 
-var current_state = 0;
+let quadtree;
+var current_state = GAME_STATES.START_MENU; 
 var background_color;
 
 var player;
-let pistol;
-let enemy;
+let ranged_weapon;
+let enemies = [];
 
 function setup() {
-  let screen = createCanvas(400, 400);
+  createCanvas(600, 600);
+
+  player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
+
+  ranged_weapon = new Pistol(60);
+
+  for (let i = 0; i < 3; i++) {
+    enemies.push(new Following(random(width), random(height), player, quadtree));
+  }
 
   switch (current_state) {
     case GAME_STATES.START_MENU:
       startMenuSetup();
-    break;
+      break;
     case GAME_STATES.GAME_MENU:
       gameMenuSetup();
-    break;
+      break;
     case GAME_STATES.GAME:
       gameSetup();
-    break;
+      break;
     case GAME_STATES.INV:
       inventorySetup();
-    break;
+      break;
     case GAME_STATES.PAUSE:
       pauseMenuSetup();
-    break;
+      break;
     case GAME_STATES.SETTING:
       settingsMenuSetup();
-    break;
+      break;
     case GAME_STATES.DEATH:
       deathMenuSetup();
-    break;
+      break;
   }
-
-  player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
-
-  pistol = new Pistol(60);
-  enemy = new Following(100, 150, player);
-}
-
-function update() {
-  clear();
-  background(background_color);
 }
 
 function draw() {
-  update();
+  clear();
+  background(background_color);
 
-  pistol.handleWeaponInput();
+  if (ranged_weapon) ranged_weapon.handleWeaponInput();
+
+  for (let i = 0; i < enemies.length; i++) {
+    enemies[i].update();
+    enemies[i].draw();
+    enemies[i].collider(enemies);
+  }
+
   player.draw();
+  player.playerMovement();
+}
 
-  enemy.draw();
+function switchWeapon(NewWeaponClass) {
+  if (ranged_weapon && ranged_weapon.ammo_manager) {
+    let oldManager = ranged_weapon.ammo_manager;
+    let newWeapon = new NewWeaponClass(oldManager.total_ammo);
+
+    newWeapon.ammo_manager.current_clip = oldManager.current_clip;
+    newWeapon.ammo_manager.is_reloading = oldManager.is_reloading;
+
+    ranged_weapon = newWeapon;
+  } else {
+    ranged_weapon = new NewWeaponClass();
+  }
 }
 
 function keyPressed() {
   if (key === '1') {
-    pistol = new Pistol(pistol.ammo_manager.total_ammo);
-    console.log("Normal Pistol")
+    switchWeapon(Pistol);
+    console.log("Switched to Normal Pistol");
   }
-
-  if (key === '2') {
-    pistol = new AutoPistol(pistol.ammo_manager.total_ammo);
-    console.log("Auto Pistol")
+  else if (key === '2') {
+    switchWeapon(AutoPistol);
+    console.log("Switched to Auto Pistol");
+  }
+  else if (key === '3') {
+    switchWeapon(Rifle);
+    console.log("Switched to Rifle");
+  }
+  else if (key === '4') {
+    switchWeapon(Shotgun);
+    console.log("Switched to Shotgun");
+  }
+  else if (key === '5') {
+    switchWeapon(Sniper);
+    console.log("Switched to Sniper");
   }
 }
