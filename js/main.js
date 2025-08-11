@@ -12,6 +12,8 @@ var current_state = 0;
 var background_color;
 var player;
 
+let pistol;
+
 function setup() {
   let screen = createCanvas(400, 400);
 
@@ -40,11 +42,28 @@ function setup() {
   }
 
   player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
+  pistol = new Pistol(60);
 }
 
 function update() {
   clear();
   background(background_color);
+}
 
+function draw() {
+  update();
+
+  pistol.handleWeaponInput();
   player.draw();
+}
+
+function keyPressed() {
+  console.log(key)
+  if (key === '1') {
+    pistol = new Pistol(pistol.ammo_manager.total_ammo);
+  }
+
+  if (key === '2') {
+    pistol = new AutoPistol(pistol.ammo_manager.total_ammo);
+  }
 }
