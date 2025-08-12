@@ -1,10 +1,9 @@
 class Following extends Enemy {
     constructor(id, x, y, target, max_health = 50, damage = 5, speed = 1, size = 25) {
         super(x, y, max_health, damage, speed, size);
-        this.target = target;
-
         this.id = id;
-
+        this.target = target;
+;
         this.vision_range = 100;
         this.aggro_range = 220;
         this.attack_range = 25;

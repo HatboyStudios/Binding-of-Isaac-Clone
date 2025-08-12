@@ -1,8 +1,12 @@
 class AmmoManagement {
-    constructor(capacity, total_ammo) {
+    constructor(name, damage, capacity, total_ammo) {
+        this.name = name;
+        this.damage = damage;
         this.capacity = capacity;
         this.current_ammo = capacity;
         this.total_ammo = total_ammo;
+
+        this.player_shooting = false;
     }
 
     reload() {
@@ -13,10 +17,67 @@ class AmmoManagement {
         console.log(`Reloaded. Current magazine: ${this.current_ammo}/${this.capacity}, Total ammo: ${this.total_ammo}`);
     }
 
-    fire() {
+    spawningBullets() {
+        if (this.name === "Shotgun") {
+            const numPellets = 3;
+            const spreadAngle = 30; 
+            const baseAngle = this.convertToNums(this.player_direction);
+
+            for (let i = 0; i < numPellets; i++) {
+                const angle = baseAngle + (i - Math.floor(numPellets / 2)) * (spreadAngle / numPellets);
+                const rad = angle * Math.PI / 180;
+
+                let bullet = new Sprite(player.x, player.y, 10, 10);
+                bullet.color = 'yellow';
+                bullet.vel = { x: Math.cos(rad) * 5, y: Math.sin(rad) * 5 };
+                bullet.size = 10;
+                bullet.damage = this.damage; 
+
+                bullets.add(bullet);
+            }
+
+        } else {
+            let bullet = new Sprite(player.x, player.y, 10, 10);
+            bullet.color = 'yellow';
+            bullet.vel = { x: 0, y: 0 };
+            bullet.size = 10;
+            bullet.damage = this.damage; 
+
+            switch (this.player_direction) {
+                case "up":
+                    bullet.vel.y = -5;
+                    break;
+                case "right":
+                    bullet.vel.x = 5;
+                    break;
+                case "down":
+                    bullet.vel.y = 5;
+                    break;
+                case "left":
+                    bullet.vel.x = -5;
+                    break;
+            }
+            bullets.add(bullet);
+        }
+    }
+
+    convertToNums(direction) {
+        switch (direction) {
+            case "up": return -90;
+            case "right": return 0;
+            case "down": return 90;
+            case "left": return 180;
+            default: return 0;
+        }
+    }
+
+    fire(player_direction) {
         if (this.current_ammo > 0) {
+            this.player_direction = player_direction;
             this.current_ammo--;
             console.log(`${this.current_ammo}/${this.capacity}`);
+
+            this.spawningBullets();
             return true; 
         } else {
             console.log('Click! Magazine is empty.');
@@ -26,5 +87,9 @@ class AmmoManagement {
 
     isEmpty() {
         return this.current_ammo <= 0;
+    }
+
+    update() {
+        this.direction = player_direction;
     }
 }

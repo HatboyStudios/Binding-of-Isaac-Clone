@@ -19,6 +19,10 @@ class Player {
         this.modifiers = modifiers;
 
         this.direction = 'down';
+
+        this.toggle_health_bar = false;
+        this.health_timer = 0;
+        this.health_duration = 90;
     }
 
     playerMovement() {
@@ -56,6 +60,7 @@ class Player {
 
     takeDamage(damage) {
         this.health = Math.max(this.health - damage, 0);
+        console.log(this.health)
     }
 
     heal(amount) {
@@ -73,5 +78,20 @@ class Player {
     draw() {
         fill(255, 255, 255); 
         square(this.x, this.y, 40, 10);
+
+        const barWidth = 40;
+        const barHeight = 5;
+        const healthPercent = this.health / 100;
+
+        fill(80);
+        rect(this.x, this.y - 10, barWidth, barHeight);
+
+        fill(lerpColor(color('red'), color('green'), healthPercent));
+        rect(this.x, this.y - 10, barWidth * healthPercent, barHeight);
+
+        noFill();
+        stroke(0);
+        rect(this.x, this.y - 10, barWidth, barHeight);
+        noStroke();
     }
 }

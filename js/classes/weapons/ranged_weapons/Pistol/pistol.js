@@ -6,7 +6,7 @@ class Pistol extends RangedWeapon {
 
     shoot() {
         if(this.fire_flag) {
-            this.fire();
+            this.fire(player_direction);
             this.fire_flag = false;
         }
     }
@@ -15,33 +15,28 @@ class Pistol extends RangedWeapon {
         if(keyIsDown('r') || keyIsDown('R')) {
             this.reload();
         }
+
+        let shot = false;
         
         if(keyIsDown(38)) {
             player_direction = "up";
-            console.log("up");
-            this.shoot();
-            player_shooting = true;
-        }
-
-        if(keyIsDown(39)) {
+            shot = true;
+        } else if(keyIsDown(39)) {
             player_direction = "right";
-            console.log("right");
-            this.shoot();
-            player_shooting = true;
-        }
-
-        if(keyIsDown(40)) {
+             shot = true;
+        } else if(keyIsDown(40)) {
             player_direction = "down";
-            console.log("down");
-            this.shoot();
-            player_shooting = true;
+             shot = true;
+        } else if(keyIsDown(37)) {
+            player_direction = "left";
+            shot = true;
         }
 
-        if(keyIsDown(37)) {
-            player_direction = "left";
-            console.log("left");
+        if (shot) {
             this.shoot();
             player_shooting = true;
+        } else {
+            player_shooting = false;
         }
 
         if (!keyIsDown(38) && !keyIsDown(39) && !keyIsDown(40) && !keyIsDown(37)) {
@@ -55,23 +50,44 @@ class AutoPistol extends RangedWeapon {
     constructor(total_ammo) {
         super('Auto Pistol', 10, 50, 12, total_ammo);
         this.cooldown = 0;
-        this.fireRate = 10;
+        this.fire_rate = 15;
     }
 
     shoot() {
-        if ((keyIsDown(38) || keyIsDown(39) || keyIsDown(40) || keyIsDown(37)) && this.cooldown <= 0) {
-            this.fire();
-            player_shooting = true;
-            this.cooldown = this.fireRate;
-        }else {
-            player_shooting = false;
+        if (this.cooldown <= 0) {
+            this.fire(player_direction);
+            this.cooldown = this.fire_rate;
         }
     }
 
     handleWeaponInput() {
         super.handleWeaponInput();
 
-        this.shoot();
-        this.cooldown--;
+        let shot = false;
+
+        if (keyIsDown(38)) {
+            player_direction = "up";
+            shot = true;
+        } else if (keyIsDown(39)) {
+            player_direction = "right";
+            shot = true;
+        } else if (keyIsDown(40)) {
+            player_direction = "down";
+            shot = true;
+        } else if (keyIsDown(37)) {
+            player_direction = "left";
+            shot = true;
+        }
+
+        if (shot) {
+            this.shoot();
+            player_shooting = true;
+        } else {
+            player_shooting = false;
+        }
+
+        if (this.cooldown > 0) {
+            this.cooldown--;
+        }
     }
 }

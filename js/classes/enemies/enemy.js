@@ -12,20 +12,22 @@ class Enemy extends Collision {
     this.direction = p5.Vector.fromAngle(random(TWO_PI));
   }
 
-  update(canvasWidth, canvasHeight, enemies) {
+  update(canvasWidth, canvasHeight, enemies, bullets) {
+    this.isDead();
+
     this.attackCooldown = max(this.attackCooldown - 1, 0);
 
     if (!this.direction || isNaN(this.direction.x) || isNaN(this.direction.y)) {
       this.direction = p5.Vector.fromAngle(random(TWO_PI));
     }
+
     this.x += this.direction.x * this.speed;
     this.y += this.direction.y * this.speed;
 
-    // Clamp inside canvas bounds
     this.x = constrain(this.x, this.size / 2, canvasWidth - this.size / 2);
     this.y = constrain(this.y, this.size / 2, canvasHeight - this.size / 2);
 
-    this.collider(enemies);
+    this.collider(enemies, bullets);
     this.checkWallCollision(canvasWidth, canvasHeight);
   }
 
@@ -38,10 +40,11 @@ class Enemy extends Collision {
   }
 
   isDead() {
-    return this.health <= 0;
+      return this.health <= 0;
   }
 
-  collider(enemies) {
+
+  collider(enemies, bullets) {
     if (!enemies || !Array.isArray(enemies)) return [];
 
     let colliding = [];
@@ -58,8 +61,27 @@ class Enemy extends Collision {
         this.y += (dy / dist) * (overlap / 2);
       }
     }
+
+    if (bullets && Array.isArray(bullets)) {
+      for (let bullet of bullets) {
+        let dx = (this.x + this.size / 2) - (bullet.x + bullet.size / 2);
+        let dy = (this.y + this.size / 2) - (bullet.y + bullet.size / 2);
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        let bulletSize = bullet.size;
+        let minDist = (this.size + bulletSize) / 2;
+
+        if (dist < minDist) {
+          if (typeof this.takeDamage === "function") {
+            this.takeDamage(bullet.damage);
+          }
+          bullet.remove();
+        }
+      }
+    }
+
     return colliding;
   }
+
 
   draw() {
     fill(255, 0, 0);

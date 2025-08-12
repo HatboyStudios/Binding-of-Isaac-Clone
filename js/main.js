@@ -14,27 +14,24 @@ var background_color;
 var player;
 let ranged_weapon;
 let enemies = [];
-
 var player_direction = "down";
 var player_shooting = false;
 
-var dots;
+let bullets;
 
 function setup() {
   createCanvas(600, 600);
 
+  bullets = new Group();
   player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
-
   ranged_weapon = new Pistol(60);
 
   for (let i = 0; i < 3; i++) {
-    enemies.push(new Teleporting(i, 20 + i, 20, player));
+    const x = random(0 + 30, width - 30); 
+    const y = random(0 + 30, height - 30);
+    enemies.push(new Bomber(i, x, y, player));
   }
 
-  dots = new Group();
-	dots.color = 'yellow';
-	dots.y = 25;
-	dots.diameter = 10;
 
   switch (current_state) {
     case GAME_STATES.START_MENU:
@@ -67,40 +64,25 @@ function update() {
 
   if (ranged_weapon) ranged_weapon.handleWeaponInput();
 
-  for (let i = 0; i < enemies.length; i++) {
-    if (typeof enemies[i].update === "function") {
-      enemies[i].update(width, height, enemies);
-    }
-    if (typeof enemies[i].collider === "function") {
-      enemies[i].collider(enemies);
-    }
-    if (typeof enemies[i].draw === "function") {
-      enemies[i].draw();
-    }
+  for (let i = enemies.length - 1; i >= 0; i--) {
+      if (typeof enemies[i].update === "function") {
+        enemies[i].update(width, height, enemies);
+      }
+      if (typeof enemies[i].collider === "function") {
+        enemies[i].collider(enemies, bullets);
+      }
+      if (typeof enemies[i].draw === "function") {
+        enemies[i].draw();
+      }
+
+      if (enemies[i].isDead()) {
+        enemies.splice(i, 1);
+      }
   }
 
-  this.direction = player_direction
-  console.log(player_shooting);
-
-  if(player_shooting === true && frameCount % 30 === 0 && ranged_weapon.ammo_manager.current_ammo !== 0 ) {
-    shootBullet();
-  }
 
   player.draw();
   player.playerMovement();
-}
-
-function shootBullet() {
-  let bullet = new dots.Sprite(player.x, player.y);
-  if(player_direction === "up") {
-    bullet.vel.y = -5;
-  }else if(player_direction === "right") {
-    bullet.vel.x = 5;
-  }else if(player_direction === "down") {
-    bullet.vel.y = 5;
-  }else {
-    bullet.vel.x = -5;
-  }
 }
 
 function switchWeapon(NewWeaponClass) {

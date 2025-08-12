@@ -2,12 +2,16 @@ class Shotgun extends RangedWeapon {
     constructor(total_ammo = 32) {
         super("Shotgun", 25, 120, 8, total_ammo);
         this.fire_flag = true;
+        this.last_shot_time = 0;
+        this.shot_delay = 1125;
     }
 
     shoot() {
-        if(this.fire_flag) {
-            this.fire();
+        const now = Date.now();
+        if (this.fire_flag && now - this.last_shot_time >= this.shot_delay) {
+            this.fire(player_direction);
             this.fire_flag = false;
+            this.last_shot_time = now;
         }
     }
     
@@ -15,13 +19,33 @@ class Shotgun extends RangedWeapon {
         if(keyIsDown('r') || keyIsDown('R')) {
             this.reload();
         }
+
+        let shot = false;
         
-        if(mouseIsPressed) {
-            this.shoot();
+        if(keyIsDown(38)) {
+            player_direction = "up";
+            shot = true;
+        } else if(keyIsDown(39)) {
+            player_direction = "right";
+            shot = true;
+        } else if(keyIsDown(40)) {
+            player_direction = "down";
+            shot = true;
+        } else if(keyIsDown(37)) {
+            player_direction = "left";
+            shot = true;
         }
 
-        if (!mouseIsPressed) {
+        if (shot) {
+            this.shoot();
+            player_shooting = true;
+        } else {
+            player_shooting = false;
+        }
+
+        if (!keyIsDown(38) && !keyIsDown(39) && !keyIsDown(40) && !keyIsDown(37)) {
             this.fire_flag = true;
+            player_shooting = false;
         }
     }
 }

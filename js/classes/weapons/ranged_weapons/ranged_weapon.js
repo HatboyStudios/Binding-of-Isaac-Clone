@@ -4,28 +4,20 @@ class RangedWeapon {
         this.damage = damage;
         this.range = range;
         
-        this.ammo_manager = new AmmoManagement(capacity, total_ammo);
+        this.ammo_manager = new AmmoManagement(name, damage, capacity, total_ammo);
     }
 
-    fire() {
-        return this.ammo_manager.fire();
+    fire(player_direction) {
+        return this.ammo_manager.fire(player_direction);
     }
 
     reload() {
         this.ammo_manager.reload();
     }
     
-    shoot() {
-        throw new Error("No Sub_Class Shoot Method Implemented");
-    }
-
     handleWeaponInput() {
-        if(keyIsDown('r') || keyIsDown('R')) {
+        if(keyIsDown(82)) {
             this.reload();
-        }
-
-        if(keyIsDown("up_arrow")) {
-            this.shoot();
         }
     }
 }
