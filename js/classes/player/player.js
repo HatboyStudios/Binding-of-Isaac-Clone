@@ -59,11 +59,15 @@ class Player {
     }
 
     takeDamage(damage) {
+        this.toggle_health_bar = true;
+         this.health_timer = this.health_duration;
         this.health = Math.max(this.health - damage, 0);
         console.log(this.health)
     }
 
     heal(amount) {
+        this.toggle_health_bar = true;
+         this.health_timer = this.health_duration;
         this.health = Math.min(this.health + amount, 100);
     }
 
@@ -75,23 +79,33 @@ class Player {
         // placeholder for loading data
     }
 
+    update() {
+        this.playerMovement();
+
+        if (this.toggle_health_bar) {
+            this.health_timer--;
+            if (this.health_timer <= 0) {
+                this.toggle_health_bar = false;
+            }
+        }
+    }
+
     draw() {
         fill(255, 255, 255); 
         square(this.x, this.y, 40, 10);
 
-        const barWidth = 40;
-        const barHeight = 5;
-        const healthPercent = this.health / 100;
 
-        fill(80);
-        rect(this.x, this.y - 10, barWidth, barHeight);
+        if (this.toggle_health_bar) {
+            const barWidth = 40;
+            const barHeight = 5;
+            const healthPercent = this.health / 100;
 
-        fill(lerpColor(color('red'), color('green'), healthPercent));
-        rect(this.x, this.y - 10, barWidth * healthPercent, barHeight);
+            fill(80);
+            rect(this.x, this.y - 10, barWidth, barHeight);
 
-        noFill();
-        stroke(0);
-        rect(this.x, this.y - 10, barWidth, barHeight);
-        noStroke();
+            fill(lerpColor(color('red'), color('green'), healthPercent));
+            rect(this.x, this.y - 10, barWidth * healthPercent, barHeight);
+            noStroke();
+        }
     }
 }

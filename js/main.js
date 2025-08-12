@@ -80,9 +80,8 @@ function update() {
       }
   }
 
-
+  player.update();
   player.draw();
-  player.playerMovement();
 }
 
 function switchWeapon(NewWeaponClass) {
