@@ -15,6 +15,11 @@ var player;
 let ranged_weapon;
 let enemies = [];
 
+var player_direction = "down";
+var player_shooting = false;
+
+var dots;
+
 function setup() {
   createCanvas(600, 600);
 
@@ -26,6 +31,10 @@ function setup() {
     enemies.push(new Following(i, 50, 50, player));
   }
 
+  dots = new Group();
+	dots.color = 'yellow';
+	dots.y = 25;
+	dots.diameter = 10;
 
   switch (current_state) {
     case GAME_STATES.START_MENU:
@@ -52,7 +61,7 @@ function setup() {
   }
 }
 
-function draw() {
+function update() {
   clear();
   background(background_color);
 
@@ -70,8 +79,28 @@ function draw() {
     }
   }
 
+  this.direction = player_direction
+  console.log(player_shooting);
+
+  if(player_shooting === true && frameCount % 30 === 0 && ranged_weapon.ammo_manager.current_ammo !== 0 ) {
+    shootBullet();
+  }
+
   player.draw();
   player.playerMovement();
+}
+
+function shootBullet() {
+  let bullet = new dots.Sprite(player.x, player.y);
+  if(player_direction === "up") {
+    bullet.vel.y = -5;
+  }else if(player_direction === "right") {
+    bullet.vel.x = 5;
+  }else if(player_direction === "down") {
+    bullet.vel.y = 5;
+  }else {
+    bullet.vel.x = -5;
+  }
 }
 
 function switchWeapon(NewWeaponClass) {

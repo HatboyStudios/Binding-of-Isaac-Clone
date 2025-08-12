@@ -24,7 +24,7 @@ class RangedWeapon {
             this.reload();
         }
 
-        if(mouseIsPressed) {
+        if(keyIsDown("up_arrow")) {
             this.shoot();
         }
     }
