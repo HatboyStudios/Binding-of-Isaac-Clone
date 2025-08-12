@@ -326,7 +326,7 @@ class Following extends Enemy {
     }
 
     draw() {
-        fill(255, 255, 0);
+        fill(0, 255, 0);
         noStroke();
         square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
 

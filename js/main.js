@@ -23,7 +23,7 @@ function setup() {
   ranged_weapon = new Pistol(60);
 
   for (let i = 0; i < 3; i++) {
-    enemies.push(new Following(i, 50, 50, player));
+    enemies.push(new Teleporting(i, 20 + i, 20, player));
   }
 
 

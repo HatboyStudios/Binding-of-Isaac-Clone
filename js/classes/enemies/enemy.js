@@ -9,19 +9,15 @@ class Enemy extends Collision {
     this.attackCooldown = 60;
     this.colliderRadius = size / 2;
 
-    // Use p5.Vector for direction
     this.direction = p5.Vector.fromAngle(random(TWO_PI));
   }
 
   update(canvasWidth, canvasHeight, enemies) {
     this.attackCooldown = max(this.attackCooldown - 1, 0);
 
-    // Defensive: Ensure valid direction vector
     if (!this.direction || isNaN(this.direction.x) || isNaN(this.direction.y)) {
       this.direction = p5.Vector.fromAngle(random(TWO_PI));
     }
-
-    // Move by direction * speed
     this.x += this.direction.x * this.speed;
     this.y += this.direction.y * this.speed;
 
