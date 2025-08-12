@@ -8,7 +8,6 @@ const GAME_STATES = {
   DEATH: 6
 };
 
-let quadtree;
 var current_state = GAME_STATES.START_MENU; 
 var background_color;
 
@@ -24,8 +23,9 @@ function setup() {
   ranged_weapon = new Pistol(60);
 
   for (let i = 0; i < 3; i++) {
-    enemies.push(new Following(random(width), random(height), player, quadtree));
+    enemies.push(new Following(i, 50, 50, player));
   }
+
 
   switch (current_state) {
     case GAME_STATES.START_MENU:
@@ -59,9 +59,15 @@ function draw() {
   if (ranged_weapon) ranged_weapon.handleWeaponInput();
 
   for (let i = 0; i < enemies.length; i++) {
-    enemies[i].update();
-    enemies[i].draw();
-    enemies[i].collider(enemies);
+    if (typeof enemies[i].update === "function") {
+      enemies[i].update(width, height, enemies);
+    }
+    if (typeof enemies[i].collider === "function") {
+      enemies[i].collider(enemies);
+    }
+    if (typeof enemies[i].draw === "function") {
+      enemies[i].draw();
+    }
   }
 
   player.draw();

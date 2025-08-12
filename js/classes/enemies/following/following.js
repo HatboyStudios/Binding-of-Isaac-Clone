@@ -1,27 +1,9 @@
-let obstacles = [];
-
-function rectsCollide(r1, r2) {
-  return !(
-    r2.x > r1.x + r1.width ||
-    r2.x + r2.width < r1.x ||
-    r2.y > r1.y + r1.height ||
-    r2.y + r2.height < r1.y
-  );
-}
-
-function isColliding(rect) {
-  for (let obj of obstacles) {
-    if (rectsCollide(rect, obj)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 class Following extends Enemy {
-    constructor(x, y, target, max_health = 50, damage = 5, speed = 0.85, size = 25) {
+    constructor(id, x, y, target, max_health = 50, damage = 5, speed = 1, size = 25) {
         super(x, y, max_health, damage, speed, size);
         this.target = target;
+
+        this.id = id;
 
         this.vision_range = 100;
         this.aggro_range = 220;
@@ -35,327 +17,331 @@ class Following extends Enemy {
         this.direction = p5.Vector.fromAngle(random(TWO_PI));
 
         this.last_known_position = null;
-        this.search_radius = 50;
-        this.max_search_radius = 300;
-        this.search_attempts = 0;
-        this.max_search_attempts = 20;
-        this.search_target = null;
+        this.investigate_position = null;
 
-        this.search_timeout = 300;
-        this.search_timer = 0;
-
-        this.debug_mode = true;
+        this.memory = {
+            visited_areas: new Map(), 
+            wall_encounters: [],
+            preferred_directions: [],
+            stuck_positions: [],
+        };
+        
+        this.exploration_target = null; 
+        this.stuck_counter = 0; 
+        this.last_positions = [];
+        this.curiosity_factor = 0.7;
     }
 
-    moveTowards(dx, dy) {
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance === 0) return;
-
-        let direction = createVector(dx, dy).normalize();
-        const angleOffset = random(-PI / 16, PI / 16);
-        direction.rotate(angleOffset);
-
-        const tryMove = (dx, dy) => ({
-            x: this.x + dx * this.speed,
-            y: this.y + dy * this.speed
-        });
-
-        const makeRect = (x, y) => ({
-            x: x - this.size / 2,
-            y: y - this.size / 2,
-            width: this.size,
-            height: this.size,
-        });
-
-        let full = tryMove(direction.x, direction.y);
-        if (!isColliding(makeRect(full.x, full.y))) {
-            this.x = full.x;
-            this.y = full.y;
-            return;
-        }
-
-        let xOnly = tryMove(direction.x, 0);
-        if (!isColliding(makeRect(xOnly.x, xOnly.y))) {
-            this.x = xOnly.x;
-            return;
-        }
-
-        let yOnly = tryMove(0, direction.y);
-        if (!isColliding(makeRect(yOnly.x, yOnly.y))) {
-            this.y = yOnly.y;
-            return;
-        }
-
-        direction.rotate(random([-PI / 2, PI / 2, PI, -PI])); 
-        let escape = tryMove(direction.x, direction.y);
-        if (!isColliding(makeRect(escape.x, escape.y))) {
-            this.x = escape.x;
-            this.y = escape.y;
+    recordVisitedArea(x, y) {
+        const gridSize = 50;
+        const gridX = Math.floor(x / gridSize);
+        const gridY = Math.floor(y / gridSize);
+        const key = `${gridX},${gridY}`;
+        
+        if (!this.memory.visited_areas.has(key)) {
+            this.memory.visited_areas.set(key, 1);
+        } else {
+            this.memory.visited_areas.set(key, this.memory.visited_areas.get(key) + 1);
         }
     }
 
+    findAreaMap(x, y) {
+        const gridSize = 50;
+        const gridX = Math.floor(x / gridSize);
+        const gridY = Math.floor(y / gridSize);
+        const key = `${gridX},${gridY}`;
+        return this.memory.visited_areas.get(key) || 0;
+    }
 
-    guessingSearchTarget() {
-        const stdDev = this.search_radius / 3;
-        let attempt = 0;
-        while (attempt < 10) {
-            const offsetX = randomGaussian(0, stdDev);
-            const offsetY = randomGaussian(0, stdDev);
-
-            const candidateX = this.last_known_position.x + offsetX;
-            const candidateY = this.last_known_position.y + offsetY;
-
-            if (candidateX < 0 || candidateX > width || candidateY < 0 || candidateY > height) {
-            attempt++;
-            continue;
+    newMapTarget(canvasWidth, canvasHeight) {
+        const gridSize = 50;
+        const maxGridX = Math.floor(canvasWidth / gridSize);
+        const maxGridY = Math.floor(canvasHeight / gridSize);
+        
+        let bestTarget = null;
+        let lowestVisits = Infinity;
+        
+        for (let gx = 0; gx < maxGridX; gx++) {
+            for (let gy = 0; gy < maxGridY; gy++) {
+                const key = `${gx},${gy}`;
+                const visits = this.memory.visited_areas.get(key) || 0;
+                
+                const distance = dist(this.x, this.y, gx * gridSize + gridSize/2, gy * gridSize + gridSize/2);
+                const score = visits + (distance / 1000);
+                
+                if (score < lowestVisits) {
+                    lowestVisits = score;
+                    bestTarget = {
+                        x: gx * gridSize + gridSize/2 + random(-gridSize/4, gridSize/4),
+                        y: gy * gridSize + gridSize/2 + random(-gridSize/4, gridSize/4)
+                    };
+                }
             }
-
-            const candidateRect = {
-            x: candidateX - this.size / 2,
-            y: candidateY - this.size / 2,
-            width: this.size,
-            height: this.size,
-            };
-
-            if (!isColliding(candidateRect, this)) {
-            return { x: candidateX, y: candidateY };
-            }
-
-            attempt++;
         }
-
-        return { x: this.last_known_position.x, y: this.last_known_position.y };
+        
+        return bestTarget;
     }
 
-    guessingSearch() {
-        if (!this.last_known_position) {
-            this.ENEMY_STATE = 'PATROL';
-            this.search_timer = 0;
-            this.search_attempts = 0;
-            this.search_radius = 50;
-            this.search_target = null;
-            return;
+    isStuck() {
+        this.last_positions.push({ x: this.x, y: this.y });
+        
+        if (this.last_positions.length > 30) {
+            this.last_positions.shift();
         }
-
-        if (!this.search_target || this.reachedTarget(this.search_target)) {
-            if (this.search_attempts >= this.max_search_attempts) {
-            this.search_radius = min(this.search_radius + 50, this.max_search_radius);
-            this.search_attempts = 0;
-            }
-
-            this.search_target = this.guessingSearchTarget();
-            this.search_attempts++;
+        
+        if (this.last_positions.length < 20) return false;
+        
+        let minX = this.last_positions[0].x;
+        let maxX = this.last_positions[0].x;
+        let minY = this.last_positions[0].y;
+        let maxY = this.last_positions[0].y;
+        
+        for (let pos of this.last_positions) {
+            minX = Math.min(minX, pos.x);
+            maxX = Math.max(maxX, pos.x);
+            minY = Math.min(minY, pos.y);
+            maxY = Math.max(maxY, pos.y);
         }
-
-        const dx = this.search_target.x - this.x;
-        const dy = this.search_target.y - this.y;
-        this.moveTowards(dx, dy);
-
-        this.search_timer++;
-        if (this.search_timer > this.search_timeout) {
-            this.ENEMY_STATE = 'PATROL';
-            this.last_known_position = null;
-            this.search_target = null;
-            this.search_timer = 0;
-            this.search_attempts = 0;
-            this.search_radius = 50;
-        }
+        
+        const areaWidth = maxX - minX;
+        const areaHeight = maxY - minY;
+        
+        return (areaWidth < 80 && areaHeight < 80);
     }
 
-    reachedTarget(target) {
-        const dx = target.x - this.x;
-        const dy = target.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < this.speed * 2;
-    }
-
-    checkVision() {
-        const dx = this.target.x - this.x;
-        const dy = this.target.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance > this.vision_range) return false;
-
-        const stepSize = 5;
-        const numSteps = Math.floor(distance / stepSize);
-        const directionX = dx / distance;
-        const directionY = dy / distance;
-
-        for (let i = 1; i < numSteps; i++) {
-            const checkX = this.x + directionX * i * stepSize;
-            const checkY = this.y + directionY * i * stepSize;
-
-            const checkRect = {
-            x: checkX - this.size / 2,
-            y: checkY - this.size / 2,
-            width: this.size,
-            height: this.size,
-            };
-
-            if (isColliding(checkRect, this)) return false;
+    tryMove(dir, canvasWidth, canvasHeight) {
+        const nextX = this.x + dir.x * this.speed;
+        const nextY = this.y + dir.y * this.speed;
+        if (nextX < this.size / 2 || nextX > canvasWidth - this.size / 2 ||
+            nextY < this.size / 2 || nextY > canvasHeight - this.size / 2) {
+            
+            this.memory.wall_encounters.push({
+                x: this.x, 
+                y: this.y, 
+                direction: this.direction.copy(),
+                timestamp: frameCount
+            });
+            
+            let newDirection = this.findValidDirection(canvasWidth, canvasHeight);
+            this.direction = newDirection;
+            this.exploration_target = null;
+            
+            return false;
         }
 
+        this.x = nextX;
+        this.y = nextY;
+        this.recordVisitedArea(this.x, this.y);
         return true;
     }
 
-    update() {
-        super.update();
+    findValidDirection(canvasWidth, canvasHeight) {
+        const directions = [];
+        const numDirections = 8; 
+        
+        for (let i = 0; i < numDirections; i++) {
+            const angle = (i / numDirections) * TWO_PI;
+            const testDir = p5.Vector.fromAngle(angle);
+            
+            let testDistance = 0;
+            const maxTest = 100;
+            
+            for (let d = 10; d <= maxTest; d += 10) {
+                const testX = this.x + testDir.x * d;
+                const testY = this.y + testDir.y * d;
+                
+                if (testX < this.size/2 || testX > canvasWidth - this.size/2 ||
+                    testY < this.size/2 || testY > canvasHeight - this.size/2) {
+                    break;
+                }
+                testDistance = d;
+            }
+            
+            const testX = this.x + testDir.x * 50;
+            const testY = this.y + testDir.y * 50;
+            const explorationLevel = this.findAreaMap(testX, testY);
+            
+            directions.push({
+                direction: testDir,
+                clearDistance: testDistance,
+                exploration: explorationLevel,
+                score: testDistance * 2 - explorationLevel * 10
+            });
+        }
+        
+        // Finds the best direction
+        directions.sort((a, b) => b.score - a.score);
+        const topChoices = directions.slice(0, 3);
+        const chosen = topChoices[Math.floor(random(topChoices.length))];
+        
+        return chosen.direction;
+    }
+
+    moveTowards(dx, dy, canvasWidth, canvasHeight) {
+        let distance = sqrt(dx * dx + dy * dy);
+        if (distance === 0) return; 
+
+        let dirX = dx / distance;
+        let dirY = dy / distance;
+
+        this.x += dirX * this.speed;
+        this.y += dirY * this.speed;
+
+        this.x = constrain(this.x, this.size / 2, canvasWidth - this.size / 2);
+        this.y = constrain(this.y, this.size / 2, canvasHeight - this.size / 2);
+    }
+
+    patrol(canvasWidth, canvasHeight) {
+        if (this.isStuck()) {
+            this.stuck_counter++;
+            if (this.stuck_counter > 10) {
+                this.exploration_target = this.newMapTarget(canvasWidth, canvasHeight);
+                this.stuck_counter = 0;
+                this.last_positions = []; 
+            }
+        } else {
+            this.stuck_counter = Math.max(0, this.stuck_counter - 1);
+        }
+
+        if (this.patrol_timer <= 0 || this.exploration_target === null) {
+            // Target Finding based on curiosity and current situation
+            if (random() < this.curiosity_factor || this.exploration_target === null) {
+                this.exploration_target = this.newMapTarget(canvasWidth, canvasHeight);
+            }
+            
+            if (this.exploration_target) {
+                // Head towards unexplored area
+                const dx = this.exploration_target.x - this.x;
+                const dy = this.exploration_target.y - this.y;
+                const distance = sqrt(dx * dx + dy * dy);
+                
+                if (distance > 30) {
+                    // Go to target
+                    this.direction = createVector(dx / distance, dy / distance);
+                } else {
+                    // Find a new target
+                    this.exploration_target = null;
+                }
+            } else {
+                this.direction = p5.Vector.fromAngle(random(TWO_PI));
+            }
+            
+            this.direction.normalize();
+            this.patrol_timer = int(random(30, 120));
+            
+        } else {
+            if (random() < 0.02) { 
+                if (this.exploration_target) {
+                    const dx = this.exploration_target.x - this.x;
+                    const dy = this.exploration_target.y - this.y;
+                    const distance = sqrt(dx * dx + dy * dy);
+                    if (distance > 10) {
+                        const targetDir = createVector(dx / distance, dy / distance);
+                        this.direction = p5.Vector.lerp(this.direction, targetDir, 0.3);
+                        this.direction.normalize();
+                    }
+                } else {
+                    this.direction.rotate(radians(random(-15, 15)));
+                    this.direction.normalize();
+                }
+            }
+            this.patrol_timer--;
+        }
+
+        this.tryMove(this.direction, canvasWidth, canvasHeight);
+        
+        if (this.exploration_target && 
+            dist(this.x, this.y, this.exploration_target.x, this.exploration_target.y) < 25) {
+            this.exploration_target = null;
+            this.patrol_timer = 0; 
+        }
+    }
+
+    checkVision() {
+        let dx = this.target.x - this.x;
+        let dy = this.target.y - this.y;
+        let distance = sqrt(dx * dx + dy * dy);
+        return distance <= this.vision_range;
+    }
+
+    update(canvasWidth, canvasHeight, enemies) {
         if (this.attack_cooldown > 0) this.attack_cooldown--;
 
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const player_found = this.checkVision();
+
+        const distance = sqrt(dx * dx + dy * dy);
+        const seesPlayer = this.checkVision();
+
+        if (seesPlayer) {
+            this.last_known_position = { x: this.target.x, y: this.target.y };
+            this.investigate_position = null;
+        }
 
         if (distance <= this.attack_range) {
             this.ENEMY_STATE = 'ATTACK';
             this.last_known_position = { x: this.target.x, y: this.target.y };
-            this.search_timer = 0;
-        } else if (distance <= this.aggro_range || player_found) {
+        } else if (seesPlayer || distance <= this.aggro_range) {
             this.ENEMY_STATE = 'AGGRO';
             this.last_known_position = { x: this.target.x, y: this.target.y };
-            this.search_timer = 0;
         } else if (this.last_known_position) {
             this.ENEMY_STATE = 'SEARCH';
+        } else if (this.investigate_position) {
+            this.ENEMY_STATE = 'INVESTIGATE';
         } else {
             this.ENEMY_STATE = 'PATROL';
         }
 
         switch (this.ENEMY_STATE) {
             case 'ATTACK':
-                this.moveTowards(dx, dy);
+                this.moveTowards(dx, dy, canvasWidth, canvasHeight);
                 if (this.attack_cooldown <= 0) {
-                    if (random() < 0.85) {
                     this.target.takeDamage(this.damage);
-                    }
-                    this.attack_cooldown = this.attack_rate + int(random(-10, 10));
+                    this.attack_cooldown = this.attack_rate;
                 }
                 break;
 
             case 'AGGRO':
-                this.moveTowards(dx, dy);
+                this.moveTowards(dx, dy, canvasWidth, canvasHeight);
                 break;
 
             case 'SEARCH':
-                this.guessingSearch();
+                this.moveTowards(this.last_known_position.x - this.x, this.last_known_position.y - this.y, canvasWidth, canvasHeight);
+                if (dist(this.x, this.y, this.last_known_position.x, this.last_known_position.y) < this.speed * 2) {
+                    this.last_known_position = null;
+                }
+                break;
+
+            case 'INVESTIGATE':
+                this.moveTowards(this.investigate_position.x - this.x, this.investigate_position.y - this.y, canvasWidth, canvasHeight);
+                if (dist(this.x, this.y, this.investigate_position.x, this.investigate_position.y) < this.speed * 2) {
+                    this.investigate_position = null;
+                }
                 break;
 
             case 'PATROL':
-                this.patrol();
+                this.patrol(canvasWidth, canvasHeight);
                 break;
         }
     }
 
-    patrol() {
-        if (this.patrol_timer <= 0) {
-            console.log("Picking new patrol direction...");
-            const maxTries = 16;
-            let foundSafeDirection = false;
+    draw() {
+        fill(255, 255, 0);
+        noStroke();
+        square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
 
-            for (let i = 0; i < maxTries; i++) {
-                const tryDir = p5.Vector.fromAngle(random(TWO_PI));
-                const tryX = this.x + tryDir.x * this.speed;
-                const tryY = this.y + tryDir.y * this.speed;
+        stroke(255, 0, 0);
+        strokeWeight(2);
 
-                const tryRect = {
-                    x: tryX - this.size / 2,
-                    y: tryY - this.size / 2,
-                    width: this.size,
-                    height: this.size
-                };
-
-                const isInsideCanvas =
-                    tryX >= 0 && tryX <= width &&
-                    tryY >= 0 && tryY <= height;
-
-
-                const willCollide = isColliding(tryRect);
-
-                console.log(
-                    `Try ${i + 1}: Dir=(${tryDir.x.toFixed(2)}, ${tryDir.y.toFixed(2)}) | Next=(${tryX.toFixed(1)}, ${tryY.toFixed(1)}) | Inside=${isInsideCanvas} | Collides=${willCollide}`
-                );
-
-                if (isInsideCanvas && !willCollide) {
-                    console.log(`✅ Direction accepted on try ${i + 1}`);
-                    this.direction = tryDir;
-                    this.patrol_timer = int(random(120, 240));
-                    foundSafeDirection = true;
-                    break;
-                }
-            }
-
-            if (!foundSafeDirection) {
-                console.warn("⚠️ No safe direction found. Trying again soon.");
-                this.patrol_timer = 5; 
-                return;
-            }
+        if (this.lastDx !== undefined && this.lastDy !== undefined) {
+            line(this.x, this.y, this.x + this.lastDx * 10, this.y + this.lastDy * 10);
         }
 
-        const nextX = this.x + this.direction.x * this.speed;
-        const nextY = this.y + this.direction.y * this.speed;
+        noStroke();
 
-        const nextRect = {
-            x: nextX - this.size / 2,
-            y: nextY - this.size / 2,
-            width: this.size,
-            height: this.size,
-        };
-
-        const collides = isColliding(nextRect) || 
-                            nextX - this.size / 2 < 0 ||
-                            nextX + this.size / 2 > width ||
-                            nextY - this.size / 2 < 0 ||
-                            nextY + this.size / 2 > height;
-
-        if (collides) {
-            console.warn("💥 Collision detected on move. Will pick new direction next frame.");
-            this.patrol_timer = 0;
-        } else {
-            this.x = nextX;
-            this.y = nextY;
-            this.patrol_timer--;
-            console.log(`🚶 Moved to (${this.x.toFixed(1)}, ${this.y.toFixed(1)}) | Timer: ${this.patrol_timer}`);
-        }
-
-        this.x = constrain(this.x, this.size / 2, width - this.size / 2);
-        this.y = constrain(this.y, this.size / 2, height - this.size / 2);
+        fill(255);
+        textSize(10);
+        text(`x:${this.x.toFixed(1)}`, this.x - this.size / 2, this.y - this.size / 2 - 10);
+        text(`y:${this.y.toFixed(1)}`, this.x - this.size / 2, this.y - this.size / 2);
     }
-
-
-  debug() {
-    noFill();
-    stroke(0, 255, 0, 100);
-    circle(this.x, this.y, this.vision_range * 2);
-    stroke(255, 255, 0, 100);
-    circle(this.x, this.y, this.aggro_range * 2);
-    stroke(255, 0, 0, 100);
-    circle(this.x, this.y, this.attack_range * 2);
-
-    if (this.last_known_position) {
-      stroke(255, 100, 255);
-      line(this.x, this.y, this.last_known_position.x, this.last_known_position.y);
-      fill(255, 100, 255, 100);
-      noStroke();
-      circle(this.last_known_position.x, this.last_known_position.y, 10);
-    }
-
-    if (this.ENEMY_STATE === 'SEARCH' && this.search_target) {
-      stroke(0, 0, 255, 150);
-      fill(0, 0, 255, 100);
-      circle(this.search_target.x, this.search_target.y, 12);
-    }
-
-    fill(255);
-    noStroke();
-    textSize(10);
-    textAlign(CENTER);
-    text(this.ENEMY_STATE, this.x, this.y - 20);
-  }
-
-  draw() {
-    fill(255, 0, 0);
-    square(this.x - this.size / 2, this.y - this.size / 2, this.size);
-
-    this.debug();
-  }
 }

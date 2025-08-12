@@ -1,59 +1,72 @@
-class Enemy {
-    constructor(x, y, max_health, damage, speed, size) {
-        this.x = x;
-        this.y = y;
-        this.max_health = max_health;
-        this.health = max_health;
-        this.damage = damage;
-        this.speed = speed;
-        this.size = size;
+class Enemy extends Collision {
+  constructor(x, y, max_health = 50, damage = 5, speed = 0.85, size = 25) {
+    super(x, y, speed, size);
 
-        this.attackCooldown = 60;
-        this.colliderRadius = size / 2;
+    this.max_health = max_health;
+    this.health = max_health;
+    this.damage = damage;
 
-        let angle = Math.random() * Math.PI * 2;
-        this.direction = {
-            x: Math.cos(angle),
-            y: Math.sin(angle)
-        };
+    this.attackCooldown = 60;
+    this.colliderRadius = size / 2;
+
+    // Use p5.Vector for direction
+    this.direction = p5.Vector.fromAngle(random(TWO_PI));
+  }
+
+  update(canvasWidth, canvasHeight, enemies) {
+    this.attackCooldown = max(this.attackCooldown - 1, 0);
+
+    // Defensive: Ensure valid direction vector
+    if (!this.direction || isNaN(this.direction.x) || isNaN(this.direction.y)) {
+      this.direction = p5.Vector.fromAngle(random(TWO_PI));
     }
 
-    update() {
-        this.attackCooldown--;
-    }
+    // Move by direction * speed
+    this.x += this.direction.x * this.speed;
+    this.y += this.direction.y * this.speed;
 
-    takeDamage(damage) {
-        this.health = Math.max(this.health - damage, 0);
-    }
+    // Clamp inside canvas bounds
+    this.x = constrain(this.x, this.size / 2, canvasWidth - this.size / 2);
+    this.y = constrain(this.y, this.size / 2, canvasHeight - this.size / 2);
 
-    heal(amount) {
-        this.health = Math.min(this.health + amount, this.max_health);
-    }
+    this.collider(enemies);
+    this.checkWallCollision(canvasWidth, canvasHeight);
+  }
 
-    isDead() {
-        return this.health <= 0;
-    }
+  takeDamage(amount) {
+    this.health = max(this.health - amount, 0);
+  }
 
-    collider(enemies) {
-        let colliding = [];
-        for (let other of enemies) {
-            if (other === this) continue;
-            let dx = this.x - other.x;
-            let dy = this.y - other.y;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-            let minDist = this.colliderRadius + other.colliderRadius;
-            if (dist < minDist && dist > 0) {
-            colliding.push(other);
-            let overlap = minDist - dist;
-                this.x += (dx / dist) * (overlap / 2);
-                this.y += (dy / dist) * (overlap / 2);
-            }
-        }
+  heal(amount) {
+    this.health = min(this.health + amount, this.max_health);
+  }
+
+  isDead() {
+    return this.health <= 0;
+  }
+
+  collider(enemies) {
+    if (!enemies || !Array.isArray(enemies)) return [];
+
+    let colliding = [];
+    for (let other of enemies) {
+      if (other === this) continue;
+      let dx = this.x - other.x;
+      let dy = this.y - other.y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      let minDist = this.colliderRadius + other.colliderRadius;
+      if (dist < minDist && dist > 0) {
+        colliding.push(other);
+        let overlap = minDist - dist;
+        this.x += (dx / dist) * (overlap / 2);
+        this.y += (dy / dist) * (overlap / 2);
+      }
+    }
     return colliding;
-    }
+  }
 
-    draw() {
-        fill(255, 0, 0);
-        square(this.x, this.y, this.size, 10);
-    }
+  draw() {
+    fill(255, 0, 0);
+    square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
+  }
 }
