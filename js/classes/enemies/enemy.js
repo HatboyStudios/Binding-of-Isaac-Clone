@@ -185,7 +185,7 @@ class Enemy extends Collision {
           this.takeDamage(bullet.damage);
         }
 
-        bullet.remove(); // Use this instead of splice()
+        bullet.remove();
       }
     }
   }
