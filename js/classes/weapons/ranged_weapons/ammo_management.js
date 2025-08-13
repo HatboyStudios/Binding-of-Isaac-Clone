@@ -18,16 +18,24 @@ class AmmoManagement {
     }
 
     spawningBullets() {
+        const player_center_X = player.x + 40 / 2;
+        const player_center_Y = player.y + 40 / 2;
+
         if (this.name === "Shotgun") {
             const numPellets = 3;
             const spreadAngle = 30; 
             const baseAngle = this.convertToNums(this.player_direction);
 
+            const spawnOffset = 5; 
+
             for (let i = 0; i < numPellets; i++) {
                 const angle = baseAngle + (i - Math.floor(numPellets / 2)) * (spreadAngle / numPellets);
                 const rad = angle * Math.PI / 180;
 
-                let bullet = new Sprite(player.x, player.y, 10, 10);
+                const spawnX = player_center_X + Math.cos(rad) * spawnOffset;
+                const spawnY = player_center_Y + Math.sin(rad) * spawnOffset;
+
+                let bullet = new Sprite(spawnX, spawnY, 10, 10);
                 bullet.color = 'yellow';
                 bullet.vel = { x: Math.cos(rad) * 5, y: Math.sin(rad) * 5 };
                 bullet.size = 10;
@@ -35,9 +43,8 @@ class AmmoManagement {
 
                 bullets.add(bullet);
             }
-
         } else {
-            let bullet = new Sprite(player.x, player.y, 10, 10);
+            let bullet = new Sprite(player_center_X, player_center_Y, 10, 10);
             bullet.color = 'yellow';
             bullet.vel = { x: 0, y: 0 };
             bullet.size = 10;
@@ -60,6 +67,7 @@ class AmmoManagement {
             bullets.add(bullet);
         }
     }
+
 
     convertToNums(direction) {
         switch (direction) {

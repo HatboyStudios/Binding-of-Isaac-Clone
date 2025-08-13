@@ -135,6 +135,8 @@ class Bomber extends Enemy {
   }
 
   draw() {
+    super.draw();
+
     if (this.hasExploded) {
       const t = this.postExplosionTimer;
       if (t > 0) {

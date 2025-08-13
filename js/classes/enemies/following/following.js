@@ -325,22 +325,9 @@ class Following extends Enemy {
     }
 
     draw() {
+        super.draw();
         fill(0, 255, 0);
         noStroke();
         square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
-
-        stroke(255, 0, 0);
-        strokeWeight(2);
-
-        if (this.lastDx !== undefined && this.lastDy !== undefined) {
-            line(this.x, this.y, this.x + this.lastDx * 10, this.y + this.lastDy * 10);
-        }
-
-        noStroke();
-
-        fill(255);
-        textSize(10);
-        text(`x:${this.x.toFixed(1)}`, this.x - this.size / 2, this.y - this.size / 2 - 10);
-        text(`y:${this.y.toFixed(1)}`, this.x - this.size / 2, this.y - this.size / 2);
     }
 }

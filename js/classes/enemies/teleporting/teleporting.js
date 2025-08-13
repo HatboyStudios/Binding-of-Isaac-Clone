@@ -1,15 +1,18 @@
 class Teleporting extends Enemy {
-    constructor(id, x, y, target, max_health = 50, damage = 5, speed = 1, size = 25) {
+    constructor(id, x, y, target, max_health = 50, damage = 15, speed = 1, size = 25) {
         super(x, y, max_health, damage, speed, size);
         this.target = target
         this.id = id;
+
+        this.attack_rate = 15;
+        this.attack_cooldown = 0;
 
         this.vision_range = 100;
         this.aggro_range = 220;
         this.attack_range = 25;
 
-        this.teleport_range = 60;
-        this.skill_cooldown_rate = 90;
+        this.teleport_range = 50;
+        this.skill_cooldown_rate = 60;
         this.skill_cooldown = 0;
 
         this.ENEMY_STATE = 'STATIONARY';
@@ -128,6 +131,7 @@ class Teleporting extends Enemy {
     }
 
     draw() {
+        super.draw();
         fill(255, 0, 128);
         noStroke();
         square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);

@@ -14,6 +14,8 @@ var background_color;
 var player;
 let ranged_weapon;
 let enemies = [];
+let collectables = [];
+
 var player_direction = "down";
 var player_shooting = false;
 
@@ -29,9 +31,19 @@ function setup() {
   for (let i = 0; i < 3; i++) {
     const x = random(0 + 30, width - 30); 
     const y = random(0 + 30, height - 30);
-    enemies.push(new Bomber(i, x, y, player));
+    enemies.push(new Teleporting(i, x, y, player));
   }
 
+  collectables.push(new Collectable(random(30, width - 30), random(30, height - 30), 30, {
+    type: 'buff',
+    buff: {
+      name: 'speed boost',
+      stat: 'speed',
+      amount: 1.5,
+      duration: 1000,
+    },
+    color: 'lightblue',
+  }));
 
   switch (current_state) {
     case GAME_STATES.START_MENU:
@@ -78,6 +90,14 @@ function update() {
       if (enemies[i].isDead()) {
         enemies.splice(i, 1);
       }
+  }
+
+  for (let i = collectables.length - 1; i >= 0; i--) {
+    collectables[i].draw();         
+    collectables[i].checkCollision(player); 
+    if (collectables[i].collected) {
+      collectables.splice(i, 1);     
+    }
   }
 
   player.update();

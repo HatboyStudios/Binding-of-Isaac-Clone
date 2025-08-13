@@ -1,21 +1,30 @@
 class Player {
-    constructor(x, y, level, health = 100, base_speed, base_stamina, strength, defense, range, modifiers = []) {
+    constructor(x, y, level, base_health = 100, base_speed, base_stamina, base_strength, base_defense, base_range, modifiers = []) {
         // Base props
         this.x = x;
         this.y = y;
-        this.health = health;
+        this.size = 50;
         this.level = level;
 
-        // Speed Logic
+        // Dynamic props
+        this.base_health = base_health;
+        this.health = base_health;
+
         this.base_speed = base_speed;
         this.speed = base_speed;
+
         this.base_stamina = base_stamina;
         this.stamina = base_stamina;
 
-        // Dynamic props
-        this.strength = strength;
-        this.defense = defense;
-        this.range = range;
+        this.base_strength = base_strength;
+        this.strength = base_strength;
+
+        this.base_defense = base_defense;
+        this.defense = base_defense;
+
+        this.base_range = base_range;
+        this.range = base_range;
+
         this.modifiers = modifiers;
 
         this.direction = 'down';
@@ -26,8 +35,6 @@ class Player {
     }
 
     playerMovement() {
-        this.speed = this.base_speed;
-
         const isMoving = keyIsDown('w') || keyIsDown('W') || keyIsDown('s') || keyIsDown('S') || keyIsDown('a') || keyIsDown('A') || keyIsDown('d') || keyIsDown('D');
 
         if (keyIsDown('Shift') && this.stamina > 0 && isMoving) {
@@ -60,15 +67,74 @@ class Player {
 
     takeDamage(damage) {
         this.toggle_health_bar = true;
-         this.health_timer = this.health_duration;
+        this.health_timer = this.health_duration;
         this.health = Math.max(this.health - damage, 0);
-        console.log(this.health)
     }
 
     heal(amount) {
         this.toggle_health_bar = true;
-         this.health_timer = this.health_duration;
+        this.health_timer = this.health_duration;
         this.health = Math.min(this.health + amount, 100);
+    }
+
+    addModifier(mod) {
+        if (Array.isArray(mod)) {
+            mod.forEach(m => this.addModifier(m));
+            return;
+        }
+
+        mod.startTime = Date.now();
+
+        console.log(mod)
+        this.modifiers.push(mod);
+
+        console.log(mod.stat);
+        this.applyModifier(mod);
+    }
+
+    applyModifier(mod) {
+        switch(mod.stat) {
+            case 'speed':
+                this.speed += mod.amount;
+                break;
+            case 'strength':
+                this.strength += mod.amount;
+                break;
+            case 'defense':
+                this.defense += mod.amount;
+                break;
+            case 'range':
+                this.range += mod.amount;
+                break;
+        }
+    }
+
+    removeModifier(mod) {
+        switch(mod.stat) {
+            case 'speed':
+            this.speed -= mod.amount;
+            break;
+            case 'strength':
+            this.strength -= mod.amount;
+            break;
+            case 'defense':
+            this.defense -= mod.amount;
+            break;
+            case 'range':
+            this.range -= mod.amount;
+            break;
+        }
+    }
+
+    updateModifiers() {
+        const now = Date.now();
+        this.modifiers = this.modifiers.filter(mod => {
+            if (mod.duration && now - mod.startTime >= mod.duration) {
+            this.removeModifier(mod);
+            return false;
+            }
+            return true;
+        });
     }
 
     saveData() {
@@ -80,7 +146,15 @@ class Player {
     }
 
     update() {
+        this.speed = this.base_speed;
+        this.strength = this.base_strength;
+        this.defense = this.base_defense;
+        this.range = this.base_range;
+
+        this.modifiers.forEach(mod => this.applyModifier(mod));
+
         this.playerMovement();
+        this.updateModifiers();
 
         if (this.toggle_health_bar) {
             this.health_timer--;
@@ -90,6 +164,7 @@ class Player {
         }
     }
 
+
     draw() {
         fill(255, 255, 255); 
         square(this.x, this.y, 40, 10);
@@ -98,7 +173,7 @@ class Player {
         if (this.toggle_health_bar) {
             const barWidth = 40;
             const barHeight = 5;
-            const healthPercent = this.health / 100;
+            const healthPercent = this.health / this.base_health;
 
             fill(80);
             rect(this.x, this.y - 10, barWidth, barHeight);

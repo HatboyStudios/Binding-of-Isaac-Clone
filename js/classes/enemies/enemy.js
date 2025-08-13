@@ -10,6 +10,8 @@ class Enemy extends Collision {
     this.colliderRadius = size / 2;
 
     this.direction = p5.Vector.fromAngle(random(TWO_PI));
+
+    this.toggle_health_bar = false;
   }
 
   update(canvasWidth, canvasHeight, enemies, bullets) {
@@ -32,10 +34,12 @@ class Enemy extends Collision {
   }
 
   takeDamage(amount) {
+    this.toggle_health_bar = true;
     this.health = max(this.health - amount, 0);
   }
 
   heal(amount) {
+    this.toggle_health_bar = true;
     this.health = min(this.health + amount, this.max_health);
   }
 
@@ -84,7 +88,17 @@ class Enemy extends Collision {
 
 
   draw() {
-    fill(255, 0, 0);
-    square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
+    if (this.toggle_health_bar) {
+        const barWidth = 40;
+        const barHeight = 5;
+        const healthPercent = this.health / this.max_health;
+
+        fill(80);
+        rect(this.x -20, this.y - 22, barWidth, barHeight);
+
+        fill(lerpColor(color('red'), color('green'), healthPercent));
+        rect(this.x - 20, this.y - 22, barWidth * healthPercent, barHeight);
+        noStroke();
+    }
   }
 }
