@@ -18,8 +18,9 @@ class AmmoManagement {
     }
 
     spawningBullets() {
-        const player_center_X = player.x + 40 / 2;
-        const player_center_Y = player.y + 40 / 2;
+        const player_center_X = player.x;
+        const player_center_Y = player.y;
+
 
         if (this.name === "Shotgun") {
             const numPellets = 3;

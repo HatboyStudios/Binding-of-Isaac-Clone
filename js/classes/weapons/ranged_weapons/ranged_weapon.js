@@ -8,7 +8,9 @@ class RangedWeapon {
     }
 
     fire(player_direction) {
-        return this.ammo_manager.fire(player_direction);
+        if (!timeFrozen) {
+            return this.ammo_manager.fire(player_direction);
+        }
     }
 
     reload() {

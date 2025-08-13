@@ -20,6 +20,7 @@ var player_direction = "down";
 var player_shooting = false;
 
 let bullets;
+let timeFrozen;
 
 function setup() {
   createCanvas(600, 600);
@@ -27,11 +28,12 @@ function setup() {
   bullets = new Group();
   player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
   ranged_weapon = new Pistol(60);
+  
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const x = random(0 + 30, width - 30); 
     const y = random(0 + 30, height - 30);
-    enemies.push(new Teleporting(i, x, y, player));
+    enemies.push(new TankBomber(i, x, y, player));
   }
 
   collectables.push(new Collectable(random(30, width - 30), random(30, height - 30), 30, {
@@ -81,7 +83,7 @@ function update() {
         enemies[i].update(width, height, enemies);
       }
       if (typeof enemies[i].collider === "function") {
-        enemies[i].collider(enemies, bullets);
+        enemies[i].collider(enemies, bullets, player);
       }
       if (typeof enemies[i].draw === "function") {
         enemies[i].draw();

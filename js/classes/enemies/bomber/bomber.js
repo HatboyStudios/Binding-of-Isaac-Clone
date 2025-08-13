@@ -137,6 +137,8 @@ class Bomber extends Enemy {
   draw() {
     super.draw();
 
+    rectMode(CENTER);  // Important: center rect draws on x,y
+
     if (this.hasExploded) {
       const t = this.postExplosionTimer;
       if (t > 0) {
@@ -155,17 +157,17 @@ class Bomber extends Enemy {
       const pulseIntensity = Math.sin(time) * 0.2 + 1;
       const pulsedSize = this.size * pulseIntensity;
 
-      fill(50, 50, 50, 100);
       noStroke();
-      square(this.x - pulsedSize / 2 - 2, this.y - pulsedSize / 2 - 2, pulsedSize + 4, 10);
+      fill(50, 50, 50, 100);
+      rect(this.x, this.y, pulsedSize + 4, pulsedSize + 4);
 
       fill(0);
-      square(this.x - pulsedSize / 2, this.y - pulsedSize / 2, pulsedSize, 10);
+      rect(this.x, this.y, pulsedSize, pulsedSize);
 
       const redIntensity = Math.sin(time * 2) * 0.3 + 0.3;
       stroke(255 * redIntensity, 0, 0, 150 * redIntensity);
       noFill();
-      square(this.x - pulsedSize / 2, this.y - pulsedSize / 2, pulsedSize, 10);
+      rect(this.x, this.y, pulsedSize, pulsedSize);
 
       push();
       noFill();
@@ -173,10 +175,11 @@ class Bomber extends Enemy {
       strokeWeight(2);
       ellipse(this.x, this.y, this.explode_range * 2);
       pop();
+
     } else {
-      fill(0);
+      fill(0); 
       noStroke();
-      square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
+      rect(this.x, this.y, this.size, this.size);
     }
 
     push();
@@ -187,3 +190,71 @@ class Bomber extends Enemy {
     pop();
   }
 }
+
+class TankBomber extends Bomber {
+  constructor(id, x, y, target) {
+    super(id, x, y, target);
+    this.max_health = 150;
+    this.health = this.max_health;
+    this.damage = 50;
+    this.speed = 0.4;
+    this.size = 40;
+    this.explode_range = 100;
+    this.explode_warning_time = 90;
+    this.aggro_range = 250;
+    this.vision_range = 180;
+    this.patrol_radius = 250;
+    this.patrol_speed_multiplier = 0.5;
+    this.explode_damage_multiplier = 1.4; 
+  }
+
+  update(canvasWidth, canvasHeight, enemies) {
+    if (this.hasExploded) {
+      if (this.postExplosionTimer > 0) {
+        this.postExplosionTimer--;
+      } else {
+        this.dead = true;
+      }
+      return;
+    }
+
+    const { dx, dy, dist } = this.distanceToTarget();
+
+    if (this.exploding) {
+      this.explode_timer--;
+
+      this.moveTowards(dx, dy, this.patrol_speed_multiplier, canvasWidth, canvasHeight);
+      if (this.explode_timer <= 0) {
+        if (dist <= this.explode_range) {
+          if (this.target && typeof this.target.takeDamage === 'function') {
+            this.target.takeDamage(this.damage * this.explode_damage_multiplier);
+          }
+        }
+        this.hasExploded = true;
+        this.exploding = false;
+        this.explode_timer = 0;
+        this.postExplosionTimer = 120;
+        this.health = 0;
+        return;
+      }
+
+      if (dist >= this.explode_range + 30) {
+        this.cancelExplosion();
+      }
+      return;
+    }
+
+    if (dist < this.explode_range) {
+      this.triggerExplosion();
+    } else if (this.checkVision() || dist < this.aggro_range) {
+      this.moveTowards(dx, dy, 1, canvasWidth, canvasHeight);
+    } else {
+      this.patrol(canvasWidth, canvasHeight);
+    }
+  }
+
+  draw() {
+    super.draw();
+  }
+}
+
