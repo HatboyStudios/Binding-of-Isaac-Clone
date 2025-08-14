@@ -89,39 +89,64 @@ class Bomber extends Enemy {
     this.explode_timer = 0;
   }
 
-  update(canvasWidth = 800, canvasHeight = 600, enemies = null) {
+  explode() {
+    for (let enemy of enemies) {
+      if (enemy === this) continue; 
+
+      const canBeDamaged = typeof enemy.takeDamage === 'function';
+      const distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+
+      if (canBeDamaged && distance <= this.explode_range) {
+        enemy.takeDamage(this.damage * 2); 
+      }
+    }
+  }
+
+  update(canvasWidth = 800, canvasHeight = 600) {
+    if (this.isDead()) {
+      if (!this._hasHandledDeath) {
+          this.handleDeath();
+          this._hasHandledDeath = true;
+      }
+      return;
+    }
+
     if (this.hasExploded) {
-        if (this.postExplosionTimer > 0) {
-            this.postExplosionTimer--;
-        } else {
-            this.dead = true;
-        }
-        return;
+      if (this.postExplosionTimer > 0) {
+          this.postExplosionTimer--;
+      } else {
+          this.dead = true;
+      }
+      return;
     }
 
     const { dx, dy, dist } = this.distanceToTarget();
 
     if (this.exploding) {
-        this.explode_timer--;
+      this.explode_timer--;
 
-        this.moveTowards(dx, dy, this.patrol_speed_multiplier, canvasWidth, canvasHeight);
-        if (this.explode_timer <= 0) {
-            if (dist <= this.explode_range) {
-            if (this.target && typeof this.target.takeDamage === 'function') {
-                this.target.takeDamage(this.damage * 2);
-            }
-            }
-            this.hasExploded = true;
-            this.exploding = false;
-            this.explode_timer = 0;
-            this.postExplosionTimer = 90; 
-            this.health = 0;
-            return;
+      this.moveTowards(dx, dy, this.patrol_speed_multiplier, canvasWidth, canvasHeight);
+
+      if (this.explode_timer <= 0) {
+        if (dist <= this.explode_range) {
+          if (this.target && typeof this.target.takeDamage === 'function') {
+            this.target.takeDamage(this.damage * 2);
+          }
         }
 
-        if (dist >= this.explode_range + 20) {
-            this.cancelExplosion();
-        }
+        this.explode();
+
+        this.hasExploded = true;
+        this.exploding = false;
+        this.explode_timer = 0;
+        this.postExplosionTimer = 90;
+        this.health = 0;
+        return;
+      }
+
+      if (dist >= this.explode_range + 20) {
+        this.cancelExplosion();
+      }
       return;
     }
 
@@ -134,10 +159,11 @@ class Bomber extends Enemy {
     }
   }
 
+
   draw() {
     super.draw();
 
-    rectMode(CENTER);  // Important: center rect draws on x,y
+    rectMode(CENTER);
 
     if (this.hasExploded) {
       const t = this.postExplosionTimer;
@@ -189,6 +215,10 @@ class Bomber extends Enemy {
     ellipse(this.x, this.y, this.explode_range * 2);
     pop();
   }
+
+  handleDeath() {
+    console.log(`Bomber ${this.id} died.`);
+  }
 }
 
 class TankBomber extends Bomber {
@@ -206,9 +236,32 @@ class TankBomber extends Bomber {
     this.patrol_radius = 250;
     this.patrol_speed_multiplier = 0.5;
     this.explode_damage_multiplier = 1.4; 
+
+    this.no_collision_push = true;
   }
 
-  update(canvasWidth, canvasHeight, enemies) {
+  explode() {
+    for (let enemy of enemies) {
+      if (enemy === this) continue;
+
+      const canBeDamaged = typeof enemy.takeDamage === 'function';
+      const distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+
+      if (canBeDamaged && distance <= this.explode_range) {
+        enemy.takeDamage(this.damage * this.explode_damage_multiplier);
+      }
+    }
+  }
+
+  update(canvasWidth, canvasHeight) {
+    if (this.isDead()) {
+      if (!this._hasHandledDeath) {
+          this.handleDeath();
+          this._hasHandledDeath = true;
+      }
+      return;
+    }
+
     if (this.hasExploded) {
       if (this.postExplosionTimer > 0) {
         this.postExplosionTimer--;
@@ -230,6 +283,9 @@ class TankBomber extends Bomber {
             this.target.takeDamage(this.damage * this.explode_damage_multiplier);
           }
         }
+
+        this.explode();
+
         this.hasExploded = true;
         this.exploding = false;
         this.explode_timer = 0;
@@ -256,5 +312,8 @@ class TankBomber extends Bomber {
   draw() {
     super.draw();
   }
-}
 
+  handleDeath() {
+    console.log(`Tank Bomber ${this.id} died.`);
+  }
+}

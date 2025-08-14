@@ -265,7 +265,14 @@ class Zombie extends Enemy {
         return distance <= this.vision_range;
     }
 
-    update(canvasWidth, canvasHeight, enemies) {
+    update(canvasWidth, canvasHeight) {
+         if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
         if (this.attack_cooldown > 0) this.attack_cooldown--;
 
         const dx = this.target.x - this.x;
@@ -337,11 +344,16 @@ class Zombie extends Enemy {
         rectMode(CENTER);
         rect(this.x, this.y, this.size, this.size);
     }
+
+    handleDeath() {
+        console.log(`Zombie ${this.id} died.`);
+    }
 }
 
 class TankZombie extends Zombie {
   constructor(id, x, y, target) {
     super(id, x, y, target, 150, 12, 0.6, 35);
+    this.no_collision_push = true;
   }
 }
 
@@ -354,7 +366,5 @@ class CrawlerZombie extends Zombie {
 class FastZombie extends Zombie {
   constructor(id, x, y, target) {
     super(id, x, y, target, 80, 6, 1.5, 22); 
-
-    console.log(this.speed)
   }
 }

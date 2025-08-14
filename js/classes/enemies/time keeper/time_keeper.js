@@ -37,7 +37,6 @@ class TimeKeeper extends Enemy {
         this.ability_rate = 600;
     }
 
-    
     freezeTime() {
         timeFrozen = true;
 
@@ -89,12 +88,18 @@ class TimeKeeper extends Enemy {
                     delete bullet._frozen;
                 }
             }
-        }, 1000);
+        }, 1500);
     }
 
 
     update(canvasWidth, canvasHeight) {
-        if (this.dead || this.hasExploded) return;
+         if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
 
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
@@ -111,8 +116,6 @@ class TimeKeeper extends Enemy {
             this.freezeTime();
             this.cooldown = this.ability_rate;
         }
-
-
 
         switch (this.ENEMY_STATE) {
             case 'AGGRO':
@@ -142,5 +145,10 @@ class TimeKeeper extends Enemy {
         fill(100, 50, 200);
         noStroke();
         rect(this.x, this.y, this.size, this.size);
+        rectMode(CENTER);
+    }
+
+    handleDeath() {
+        console.log(`Time Keeper ${this.id} died.`);
     }
 }

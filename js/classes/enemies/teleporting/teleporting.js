@@ -70,6 +70,13 @@ class Teleporting extends Enemy {
     }
 
     update(canvas_width, canvas_height) {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
         if (this.attack_cooldown > 0) this.attack_cooldown--;
 
         const dx = this.target.x - this.x;
@@ -131,46 +138,54 @@ class Teleporting extends Enemy {
 
     draw() {
         super.draw();
+
         fill(255, 0, 128);
         noStroke();
-        square(this.x - this.size / 2, this.y - this.size / 2, this.size);
+        rect(this.x, this.y, this.size, this.size);
+        rectMode(CENTER);
+    }
+
+    handleDeath() {
+        console.log(`Teleporter ${this.id} died.`);
     }
 }
 
 class FastTeleporter extends Teleporting {
-  constructor(id, x, y, target) {
-    super(id, x, y, target, 35, 8, 1.6, 20);
-    this.teleport_range = 80;
-    this.skill_cooldown_rate = 90;
-    this.attack_rate = 30;
-    this.attack_range = 40;
-    this.vision_range = 120;
-    this.aggro_range = 250;
-  }
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 35, 8, 1.6, 20);
+        this.teleport_range = 80;
+        this.skill_cooldown_rate = 90;
+        this.attack_rate = 30;
+        this.attack_range = 40;
+        this.vision_range = 120;
+        this.aggro_range = 250;
+    }
   
-  draw() {
-    super.draw();
-    fill(0, 255, 255); 
-    noStroke();
-     rect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
-  }
+    draw() {
+        super.draw();
+        fill(0, 255, 255); 
+        noStroke();
+            rect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+    }
 }
 
 class TankTeleporter extends Teleporting {
-  constructor(id, x, y, target) {
-    super(id, x, y, target, 90, 15, 0.7, 30);
-    this.teleport_range = 40;
-    this.skill_cooldown_rate = 300;
-    this.attack_rate = 60;
-    this.attack_range = 50;
-    this.vision_range = 90;
-    this.aggro_range = 180;
-  }
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 90, 15, 0.7, 30);
+        this.teleport_range = 40;
+        this.skill_cooldown_rate = 300;
+        this.attack_rate = 60;
+        this.attack_range = 50;
+        this.vision_range = 90;
+        this.aggro_range = 180;
 
-  draw() {
-    super.draw();
-    fill(50, 50, 50);
-    noStroke();
-    rect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
-  }
+        this.no_collision_push = true;
+    }
+
+    draw() {
+        super.draw();
+        fill(50, 50, 50);
+        noStroke();
+        rect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+    }
 }

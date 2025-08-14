@@ -29,14 +29,6 @@ class Shooter extends Enemy {
         return { dx, dy, dist: Math.hypot(dx, dy) };
     }
 
-    move(dx, dy, canvasWidth, canvasHeight, toward = true, factor = 1) {
-        const mag = Math.hypot(dx, dy);
-        if (mag === 0) return;
-        const sign = toward ? 1 : -1;
-        this.x = constrain(this.x + (dx / mag) * this.speed * factor * sign, this.size / 2, canvasWidth - this.size / 2);
-        this.y = constrain(this.y + (dy / mag) * this.speed * factor * sign, this.size / 2, canvasHeight - this.size / 2);
-    }
-
     createBullets() {
         const { dx, dy } = this.distanceToTarget();
         const mag = Math.hypot(dx, dy);
@@ -129,6 +121,14 @@ class Shooter extends Enemy {
     }
 
     update(canvasWidth = 800, canvasHeight = 600) {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         const { dist } = this.distanceToTarget();
 
         if (dist <= this.vision_range) {
@@ -163,5 +163,9 @@ class Shooter extends Enemy {
             fill(0);
             ellipse(bullet.x, bullet.y, bullet.size);
         }
+    }
+
+    handleDeath() {
+        console.log(`Shooter ${this.id} died.`);
     }
 }

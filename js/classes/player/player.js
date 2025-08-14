@@ -27,8 +27,6 @@ class Player {
 
         this.modifiers = modifiers;
 
-        this.direction = 'down';
-
         this.toggle_health_bar = false;
         this.health_timer = 0;
         this.health_duration = 90;
@@ -46,22 +44,22 @@ class Player {
         
         if (keyIsDown('w') || keyIsDown('W')) {
             this.y -= this.speed;
-            this.direction = 'up';
+            player_direction = 'up';
         }
 
         if (keyIsDown('s') || keyIsDown('S')) {
             this.y += this.speed;
-            this.direction = 'down';
+            player_direction = 'down';
         }
 
         if (keyIsDown('a') || keyIsDown('A')) {
             this.x -= this.speed;
-            this.direction = 'left';
+            player_direction = 'left';
         }
 
         if (keyIsDown('d') || keyIsDown('D')) {
             this.x += this.speed;
-            this.direction = 'right';
+            player_direction = 'right';
         }
 
         this.x = constrain(this.x, this.size / 2, width - this.size / 2);
@@ -151,17 +149,17 @@ class Player {
     removeModifier(mod) {
         switch(mod.stat) {
             case 'speed':
-            this.speed -= mod.amount;
-            break;
+                this.speed -= mod.amount;
+                break;
             case 'strength':
-            this.strength -= mod.amount;
-            break;
+                this.strength -= mod.amount;
+                break;
             case 'defense':
-            this.defense -= mod.amount;
-            break;
+                this.defense -= mod.amount;
+                break;
             case 'range':
-            this.range -= mod.amount;
-            break;
+                this.range -= mod.amount;
+                break;
         }
     }
 
@@ -185,6 +183,7 @@ class Player {
     }
 
     update() {
+        if (timeFrozen) return; 
         this.isDead();
         this.speed = this.base_speed;
         this.strength = this.base_strength;

@@ -14,6 +14,14 @@ class Spawner extends Enemy {
     }
 
     update() {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         if (this.spawnCooldown > 0) {
             this.spawnCooldown--;
         } else {
@@ -36,10 +44,16 @@ class Spawner extends Enemy {
 
     draw() {
         fill(150, 0, 150);
-        ellipse(this.x, this.y, this.size);
+        noStroke();
+        rect(this.x, this.y, this.size, this.size);
+        rectMode(CENTER);
 
         fill(255, 0, 0);
         rect(this.x - this.size / 2, this.y - this.size, 
              map(this.spawnCooldown, 0, this.spawnCooldownMax, this.size, 0), 5);
+    }
+
+    handleDeath() {
+        console.log(`Spawner ${this.id} died.`);
     }
 }

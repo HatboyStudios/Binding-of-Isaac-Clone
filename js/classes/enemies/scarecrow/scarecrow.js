@@ -11,6 +11,7 @@ class Scarecrow extends Enemy {
         this.safe_distance = 100;
         
         this.SPAWN_RADIUS = 50;
+        this.no_collision_push = true;
     }
 
     distanceToTarget() {
@@ -32,12 +33,20 @@ class Scarecrow extends Enemy {
         const constrainedY = constrain(spawnY, crowSize / 2, canvasHeight - crowSize / 2);
 
         // const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target);
-        enemies.push(newCrow);
+        // enemies.push(newCrow);
+        console.log("CROW")
     }
 
     update(canvasWidth = 800, canvasHeight = 600, enemies, nextEnemyId) {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         const { dist } = this.distanceToTarget();
-        
 
         if (dist <= this.vision_range) {
             this.summon_timer--;
@@ -53,5 +62,9 @@ class Scarecrow extends Enemy {
 
         fill(139, 69, 19);
         rect(this.x - this.size / 4, this.y - this.size / 2, this.size / 2, this.size);
+    }
+
+    handleDeath() {
+        console.log(`Scarecrow ${this.id} died.`);
     }
 }

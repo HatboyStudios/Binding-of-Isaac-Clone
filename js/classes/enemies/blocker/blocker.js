@@ -19,6 +19,14 @@ class Blocker extends Enemy {
   }
 
     update(canvasWidth, canvasHeight) {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
         const distance = Math.hypot(dx, dy);
@@ -129,5 +137,9 @@ class Blocker extends Enemy {
         rect(this.x, this.y, this.size, this.size);
 
         rectMode(CORNER);
+    }
+
+    handleDeath() {
+        console.log(`Blocker ${this.id} died.`);
     }
 }

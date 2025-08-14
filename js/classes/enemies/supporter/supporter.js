@@ -224,7 +224,14 @@ class Supporter extends Enemy {
     }
 
     update(canvasWidth = 800, canvasHeight = 600, enemies) {
-        if (this.dead || this.hasExploded) return;
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         this.handleStates(enemies);
 
         switch (this.ENEMY_STATE) {
@@ -244,7 +251,8 @@ class Supporter extends Enemy {
 
         fill(0, 200, 255);
         noStroke();
-        rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+        rect(this.x, this.y, this.size, this.size);
+        rectMode(CENTER);
 
         if (this.buff_cooldown > 0) {
             const cooldownPercent = this.buff_cooldown / this.buff_cooldown_max;
@@ -266,5 +274,9 @@ class Supporter extends Enemy {
             strokeWeight(2);
             line(this.x, this.y, this.current_ally.x, this.current_ally.y);
         }
+    }
+
+    handleDeath() {
+        console.log(`Supporter ${this.id} died.`);
     }
 }

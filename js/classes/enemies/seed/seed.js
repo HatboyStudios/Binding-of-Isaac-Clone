@@ -38,6 +38,14 @@ class Seed extends Enemy {
 
 
     update(canvasWidth, canvasHeight) {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         if (!this.isObstacle) {
             this.x += this.dx * this.speed;
             this.y += this.dy * this.speed;
@@ -50,7 +58,7 @@ class Seed extends Enemy {
             if (this.type === "LINGER" && distanceTraveled >= random(60, 100)) {
                 this.dx = 0;
                 this.dy = 0;
-                  this.walk_over = true;
+                this.walk_over = true;
                 this.isObstacle = true;
             }
 
@@ -128,6 +136,10 @@ class Seed extends Enemy {
             ellipse(this.x, this.y, this.size);
         }
         pop();
+    }
+
+    handleDeath() {
+        console.log(`Seeds ${this.id} died.`);
     }
 }
 

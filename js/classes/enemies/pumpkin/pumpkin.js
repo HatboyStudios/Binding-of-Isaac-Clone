@@ -188,8 +188,15 @@ class Pumpkin extends Enemy {
     }
 
     update(canvasWidth = 800, canvasHeight = 600) {
-        const { dist } = this.distanceToTarget();
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
 
+        const { dist } = this.distanceToTarget();
         this.handleStates(dist);
 
         switch (this.ENEMY_STATE) {
@@ -237,5 +244,9 @@ class Pumpkin extends Enemy {
         for (let seed of this.seeds) {
             seed.draw();
         }
+    }
+
+    handleDeath() {
+        console.log(`Pumpkin ${this.id} died.`);
     }
 }

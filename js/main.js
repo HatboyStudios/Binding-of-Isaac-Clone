@@ -28,13 +28,12 @@ function setup() {
   bullets = new Group();
   player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
   ranged_weapon = new Pistol(60);
-  
+      let x = random(0 + 30, width - 30); 
+    let y = random(0 + 30, height - 30);
 
   for (let i = 0; i < 1; i++) {
-    const x = random(0 + 30, width - 30); 
-    const y = random(0 + 30, height - 30);
-    enemies.push(new Spores(i, x, y, player));
-    enemies.push(new Pumpkin(i, x, y, player));
+    enemies.push(new TankBomber(i, x+100, y, player));
+    enemies.push(new Vine(i, x, y, player));
   }
 
   collectables.push(new Collectable(random(30, width - 30), random(30, height - 30), 30, {
@@ -80,18 +79,22 @@ function update() {
   if (ranged_weapon) ranged_weapon.handleWeaponInput();
 
   for (let i = enemies.length - 1; i >= 0; i--) {
-      if (typeof enemies[i].update === "function") {
-        enemies[i].update(width, height, enemies);
-      }
-      if (typeof enemies[i].collider === "function") {
-        enemies[i].collider(enemies, bullets, player);
-      }
-      if (typeof enemies[i].draw === "function") {
-        enemies[i].draw();
+      const enemy = enemies[i];
+
+      if (typeof enemy.update === "function") {
+          enemy.update(width, height, enemies, bullets, player);
       }
 
-      if (enemies[i].isDead()) {
-        enemies.splice(i, 1);
+      if (typeof enemy.collider === "function") {
+          enemy.collider(enemies, bullets, player);
+      }
+
+      if (typeof enemy.draw === "function") {
+          enemy.draw();
+      }
+
+      if (enemy.isDead() && enemy._hasHandledDeath) {
+          enemies.splice(i, 1);
       }
   }
 

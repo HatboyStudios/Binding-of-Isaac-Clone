@@ -66,6 +66,14 @@ class Spores extends Enemy {
     }
 
     update() {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         const { dist } = this.targetDistance();
         this.handleStates(dist);
 
@@ -92,5 +100,9 @@ class Spores extends Enemy {
             ellipse(this.x, this.y, this.spore_attack_radius * 2);
             pop();
         }
+    }
+
+    handleDeath() {
+        console.log(`Spores ${this.id} died.`);
     }
 }

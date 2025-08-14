@@ -21,6 +21,16 @@ class Werewolf extends Enemy {
         this.patrol_change_timer = 0;
         this.patrol_change_interval = 120;
         this.patrol_speed_multiplier = 0.75;
+
+        this.player_visible = false;
+        this.out_of_sight_timer = 0;
+        this.out_of_sight_cooldown = 300; 
+        this.flee_angle = null;
+        this.flee_angle_timer = 0;
+
+        this.previous_position = createVector(this.x, this.y);
+        this.stuck_timer = 0;
+        this.stuck_threshold = 60;
     }
 
     takeDamage(amount) {
@@ -28,22 +38,6 @@ class Werewolf extends Enemy {
 
         if (this.health > 0 && this.state !== 'AGGRO') {
             this.state = 'AGGRO';
-        }
-    }
-
-    moveAway(dx, dy, canvasWidth, canvasHeight) {
-        const mag = Math.hypot(dx, dy);
-        if (mag > 0) {
-            this.x = constrain(this.x - (dx / mag) * this.speed, this.size / 2, canvasWidth - this.size / 2);
-            this.y = constrain(this.y - (dy / mag) * this.speed, this.size / 2, canvasHeight - this.size / 2);
-        }
-    }
-
-    moveTowards(dx, dy, canvasWidth, canvasHeight) {
-        const mag = Math.hypot(dx, dy);
-        if (mag > 0) {
-            this.x = constrain(this.x + (dx / mag) * this.speed, this.size / 2, canvasWidth - this.size / 2);
-            this.y = constrain(this.y + (dy / mag) * this.speed, this.size / 2, canvasHeight - this.size / 2);
         }
     }
 
@@ -75,10 +69,61 @@ class Werewolf extends Enemy {
             this.findNewTarget(canvasWidth, canvasHeight);
             this.patrol_change_timer = this.patrol_change_interval + Math.random() * 60;
         }
-        this.moveTowards(dx, dy, canvasWidth, canvasHeight);
+        this.move(dx, dy, canvasWidth, canvasHeight, true, 1);
+    }
+
+    cowardMovement(canvasWidth, canvasHeight, distance) {
+        if (distance <= this.vision_range) {
+            this.player_visible = true;
+            this.out_of_sight_timer = this.out_of_sight_cooldown;
+            if (!this.flee_angle_timer || this.flee_angle_timer <= 0) {
+                const angleAway = Math.atan2(this.y - this.target.y, this.x - this.target.x);
+                const randomOffset = random(-PI / 4, PI / 4);
+                this.flee_angle = angleAway + randomOffset;
+                this.flee_angle_timer = 20 + Math.floor(Math.random() * 20);
+            } else {
+                this.flee_angle_timer--;
+            }
+
+            const flee_dx = Math.cos(this.flee_angle);
+            const flee_dy = Math.sin(this.flee_angle);
+
+            const flee_speed = this.speed * 2.5;
+            this.x = constrain(this.x + flee_dx * flee_speed, this.size / 2, canvasWidth - this.size / 2);
+            this.y = constrain(this.y + flee_dy * flee_speed, this.size / 2, canvasHeight - this.size / 2);
+
+        } else {
+            this.player_visible = false;
+            this.out_of_sight_timer--;
+
+            if (this.out_of_sight_timer <= 0) {
+                this.flee_angle = null;
+                this.flee_angle_timer = 0;
+                this.patrol(canvasWidth, canvasHeight);
+            } else {
+                if (this.flee_angle) {
+                    const flee_dx = Math.cos(this.flee_angle);
+                    const flee_dy = Math.sin(this.flee_angle);
+
+                    const flee_speed = this.speed * 2.5;
+                    this.x = constrain(this.x + flee_dx * flee_speed, this.size / 2, canvasWidth - this.size / 2);
+                    this.y = constrain(this.y + flee_dy * flee_speed, this.size / 2, canvasHeight - this.size / 2);
+                } else {
+                    this.patrol(canvasWidth, canvasHeight);
+                }
+            }
+        }
     }
 
     update(canvasWidth, canvasHeight) {
+        if (timeFrozen) return; 
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
         if (this.attackCooldown > 0) this.attackCooldown--;
 
         const dx = this.target.x - this.x;
@@ -86,15 +131,29 @@ class Werewolf extends Enemy {
         const distance = Math.hypot(dx, dy);
 
         if (this.state === 'COWARD') {
+            const move_distance = dist(this.x, this.y, this.previous_position.x, this.previous_position.y);
+
             if (distance <= this.vision_range) {
-                this.moveAway(dx, dy, canvasWidth, canvasHeight);
-            } else {
-                this.patrol(canvasWidth, canvasHeight);
+                if (move_distance < 1) {
+                    this.stuck_timer++;
+                } else {
+                    this.stuck_timer = 0;
+                }
+
+                if (this.stuck_timer >= this.stuck_threshold) {
+                    this.state = 'AGGRO';
+                }
             }
+
+            this.previous_position.set(this.x, this.y); 
+            this.cowardMovement(canvasWidth, canvasHeight, distance);
         }
+
+
+
         else if (this.state === 'AGGRO') {
             const health_percent = Math.max(0, this.health / this.max_health);
-            const power_multiplier = 1 + (1 - health_percent) * 2.5;
+            const power_multiplier = 1.5 + (1 - health_percent) * 2.5;
             this.speed = this.baseSpeed * power_multiplier;
             this.damage = this.baseDamage * power_multiplier;
 
@@ -104,7 +163,7 @@ class Werewolf extends Enemy {
                     this.attackCooldown = 30;
                 }
             } else {
-                this.moveTowards(dx, dy, canvasWidth, canvasHeight);
+                this.move(dx, dy, canvasWidth, canvasHeight, true, 1);
             }
         }
     }
@@ -117,10 +176,17 @@ class Werewolf extends Enemy {
             const anger_level = 255 - health_percent * 255;
             fill(255, 255, 19);
             stroke(anger_level, 0, 0);
-            square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
+            rect(this.x, this.y, this.size, this.size);
+            rectMode(CENTER);
         } else {
             fill(139, 69, 19);
-            square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
+            noStroke();
+            rect(this.x, this.y, this.size, this.size);
+            rectMode(CENTER);
         }
+    }
+
+    handleDeath() {
+        console.log(`Werewolf ${this.id} died.`);
     }
 }
