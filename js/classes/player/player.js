@@ -209,24 +209,21 @@ class Player {
         fill(255, 255, 255);
         square(this.x, this.y, this.size);
 
+        if (this.toggle_health_bar) {
+            const barWidth = 40;
+            const barHeight = 5;
+            const healthPercent = this.health / this.base_health;
 
+            noStroke();
+            fill(80);
 
-    if (this.toggle_health_bar) {
-        const barWidth = 40;
-        const barHeight = 5;
-        const healthPercent = this.health / this.base_health;
+            rectMode(CORNER);
+            rect(this.x - barWidth / 2, this.y - this.size / 2 - 10, barWidth, barHeight);
 
-        noStroke();
-        fill(80);
+            fill(lerpColor(color('red'), color('blue'), healthPercent));
+            rect(this.x - barWidth / 2, this.y - this.size / 2 - 10, barWidth * healthPercent, barHeight);
 
-        rectMode(CORNER);
-        rect(this.x - barWidth / 2, this.y - this.size / 2 - 10, barWidth, barHeight);
-
-        fill(lerpColor(color('red'), color('blue'), healthPercent));
-        rect(this.x - barWidth / 2, this.y - this.size / 2 - 10, barWidth * healthPercent, barHeight);
-
-        rectMode(CENTER);
-    }
-
+            rectMode(CENTER);
+        }
     }
 }
