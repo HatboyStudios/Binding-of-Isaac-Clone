@@ -1,12 +1,14 @@
-class Following extends Enemy {
-    constructor(id, x, y, target, max_health = 50, damage = 5, speed = 1, size = 25) {
+class Zombie extends Enemy {
+    constructor(id, x, y, target, max_health = 50, damage = 5, speed =1 , size = 25) {
         super(x, y, max_health, damage, speed, size);
         this.id = id;
         this.target = target;
+
+        this.speed = speed;
 ;
         this.vision_range = 100;
         this.aggro_range = 220;
-        this.attack_range = 25;
+        this.attack_range = this.size + 20;
 
         this.ENEMY_STATE = 'PATROL';
         this.attack_rate = 60;
@@ -277,19 +279,7 @@ class Following extends Enemy {
             this.investigate_position = null;
         }
 
-        if (distance <= this.attack_range) {
-            this.ENEMY_STATE = 'ATTACK';
-            this.last_known_position = { x: this.target.x, y: this.target.y };
-        } else if (seesPlayer || distance <= this.aggro_range) {
-            this.ENEMY_STATE = 'AGGRO';
-            this.last_known_position = { x: this.target.x, y: this.target.y };
-        } else if (this.last_known_position) {
-            this.ENEMY_STATE = 'SEARCH';
-        } else if (this.investigate_position) {
-            this.ENEMY_STATE = 'INVESTIGATE';
-        } else {
-            this.ENEMY_STATE = 'PATROL';
-        }
+        this.handleState(distance, seesPlayer);
 
         switch (this.ENEMY_STATE) {
             case 'ATTACK':
@@ -324,10 +314,47 @@ class Following extends Enemy {
         }
     }
 
-    draw() {
+    handleState(distance, seesPlayer) {
+        if (distance <= this.attack_range) {
+            this.ENEMY_STATE = 'ATTACK';
+            this.last_known_position = { x: this.target.x, y: this.target.y };
+        } else if (seesPlayer || distance <= this.aggro_range) {
+            this.ENEMY_STATE = 'AGGRO';
+            this.last_known_position = { x: this.target.x, y: this.target.y };
+        } else if (this.last_known_position) {
+            this.ENEMY_STATE = 'SEARCH';
+        } else if (this.investigate_position) {
+            this.ENEMY_STATE = 'INVESTIGATE';
+        } else {
+            this.ENEMY_STATE = 'PATROL';
+        }
+    }
+
+   draw() {
         super.draw();
         fill(0, 255, 0);
         noStroke();
-        square(this.x - this.size / 2, this.y - this.size / 2, this.size, 10);
+        rectMode(CENTER);
+        rect(this.x, this.y, this.size, this.size);
     }
+}
+
+class TankZombie extends Zombie {
+  constructor(id, x, y, target) {
+    super(id, x, y, target, 150, 12, 0.6, 35);
+  }
+}
+
+class CrawlerZombie extends Zombie {
+  constructor(id, x, y, target) {
+    super(id, x, y, target, 60, 4, 1.2, 20);
+  }
+}
+
+class FastZombie extends Zombie {
+  constructor(id, x, y, target) {
+    super(id, x, y, target, 80, 6, 1.5, 22); 
+
+    console.log(this.speed)
+  }
 }

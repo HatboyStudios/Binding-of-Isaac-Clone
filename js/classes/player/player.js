@@ -3,7 +3,7 @@ class Player {
         // Base props
         this.x = x;
         this.y = y;
-        this.size = 50;
+        this.size = 30;
         this.level = level;
 
         // Dynamic props
@@ -38,12 +38,12 @@ class Player {
         const isMoving = keyIsDown('w') || keyIsDown('W') || keyIsDown('s') || keyIsDown('S') || keyIsDown('a') || keyIsDown('A') || keyIsDown('d') || keyIsDown('D');
 
         if (keyIsDown('Shift') && this.stamina > 0 && isMoving) {
-            this.speed += 1.2; 
+            this.speed += 1.2;
             this.stamina -= 0.5;
         } else {
             this.stamina = Math.min(this.stamina + 0.3, this.base_stamina);
         }
- 
+        
         if (keyIsDown('w') || keyIsDown('W')) {
             this.y -= this.speed;
             this.direction = 'up';
@@ -63,6 +63,41 @@ class Player {
             this.x += this.speed;
             this.direction = 'right';
         }
+
+        this.x = constrain(this.x, this.size / 2, width - this.size / 2);
+        this.y = constrain(this.y, this.size / 2, height - this.size / 2);
+    }
+    
+   collides(other, callback) {
+        if (!other) return;
+
+        if (Array.isArray(other)) {
+            other.forEach(entity => this.collides(entity, callback));
+            return;
+        }
+
+        const halfSize = this.size / 2;
+        const playerLeft = this.x - halfSize;
+        const playerRight = this.x + halfSize;
+        const playerTop = this.y - halfSize;
+        const playerBottom = this.y + halfSize;
+
+        const otherHalf = other.size / 2;
+        const otherLeft = other.x - otherHalf;
+        const otherRight = other.x + otherHalf;
+        const otherTop = other.y - otherHalf;
+        const otherBottom = other.y + otherHalf;
+
+        const isColliding = playerRight > otherLeft &&
+                            playerLeft < otherRight &&
+                            playerBottom > otherTop &&
+                            playerTop < otherBottom;
+
+        if (isColliding && typeof callback === 'function') {
+            callback(this, other);
+        }
+
+        return isColliding;
     }
 
     takeDamage(damage) {
@@ -77,6 +112,12 @@ class Player {
         this.health = Math.min(this.health + amount, 100);
     }
 
+    isDead() {
+        if (this.health <= 0) {
+            console.log("YOU DIEDDDDDDD")
+        }
+    }
+
     addModifier(mod) {
         if (Array.isArray(mod)) {
             mod.forEach(m => this.addModifier(m));
@@ -84,10 +125,8 @@ class Player {
         }
 
         mod.startTime = Date.now();
-
-        console.log(mod)
+        console.log(mod);
         this.modifiers.push(mod);
-
         console.log(mod.stat);
         this.applyModifier(mod);
     }
@@ -146,15 +185,16 @@ class Player {
     }
 
     update() {
+        this.isDead();
         this.speed = this.base_speed;
         this.strength = this.base_strength;
         this.defense = this.base_defense;
         this.range = this.base_range;
 
         this.modifiers.forEach(mod => this.applyModifier(mod));
-
         this.playerMovement();
         this.updateModifiers();
+        this.collides();
 
         if (this.toggle_health_bar) {
             this.health_timer--;
@@ -164,23 +204,29 @@ class Player {
         }
     }
 
-
     draw() {
-        fill(255, 255, 255); 
-        square(this.x, this.y, 40, 10);
+        rectMode(CENTER);
+        fill(255, 255, 255);
+        square(this.x, this.y, this.size);
 
 
-        if (this.toggle_health_bar) {
-            const barWidth = 40;
-            const barHeight = 5;
-            const healthPercent = this.health / this.base_health;
 
-            fill(80);
-            rect(this.x, this.y - 10, barWidth, barHeight);
+    if (this.toggle_health_bar) {
+        const barWidth = 40;
+        const barHeight = 5;
+        const healthPercent = this.health / this.base_health;
 
-            fill(lerpColor(color('red'), color('green'), healthPercent));
-            rect(this.x, this.y - 10, barWidth * healthPercent, barHeight);
-            noStroke();
-        }
+        noStroke();
+        fill(80);
+
+        rectMode(CORNER);
+        rect(this.x - barWidth / 2, this.y - this.size / 2 - 10, barWidth, barHeight);
+
+        fill(lerpColor(color('red'), color('blue'), healthPercent));
+        rect(this.x - barWidth / 2, this.y - this.size / 2 - 10, barWidth * healthPercent, barHeight);
+
+        rectMode(CENTER);
+    }
+
     }
 }
