@@ -4,13 +4,13 @@ class Scarecrow extends Enemy {
         this.id = id;
         this.target = target;
 
-        this.summon_cooldown = 180;
+        this.summon_cooldown = 600;
         this.summon_timer = this.summon_cooldown;
 
         this.vision_range = 250;
         this.safe_distance = 100;
-
-        this.crows = [];
+        
+        this.SPAWN_RADIUS = 50;
     }
 
     distanceToTarget() {
@@ -19,72 +19,33 @@ class Scarecrow extends Enemy {
         return { dx, dy, dist: Math.hypot(dx, dy) };
     }
 
-    moveAway(dx, dy, canvasWidth, canvasHeight) {
-        const mag = Math.hypot(dx, dy);
-        if (mag > 0) {
-            this.x = constrain(this.x - (dx / mag) * this.speed * 5, this.size / 2, canvasWidth - this.size / 2);
-            this.y = constrain(this.y - (dy / mag) * this.speed * 5, this.size / 2, canvasHeight - this.size / 2);
-        }
+    summonCrow(enemies, nextId, canvasWidth, canvasHeight) {
+        const angle = Math.random() * Math.PI * 2;
+        const offsetX = Math.cos(angle) * this.SPAWN_RADIUS;
+        const offsetY = Math.sin(angle) * this.SPAWN_RADIUS;
+
+        const spawnX = this.x + offsetX;
+        const spawnY = this.y + offsetY;
+        
+        const crowSize = 15;
+        const constrainedX = constrain(spawnX, crowSize / 2, canvasWidth - crowSize / 2);
+        const constrainedY = constrain(spawnY, crowSize / 2, canvasHeight - crowSize / 2);
+
+        const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target);
+        enemies.push(newCrow);
     }
 
-    summonCrow() {
-        const { dx, dy } = this.distanceToTarget();
-        const mag = Math.hypot(dx, dy);
-        if (mag === 0) return;
-
-        this.crows.push({
-            x: this.x,
-            y: this.y,
-            dx: dx / mag,
-            dy: dy / mag,
-            speed: 2,
-            size: 8,
-            life: 180 
-        });
-    }
-
-    updateCrows(canvasWidth, canvasHeight) {
-        for (let i = this.crows.length - 1; i >= 0; i--) {
-            const crow = this.crows[i];
-            crow.x += crow.dx * crow.speed;
-            crow.y += crow.dy * crow.speed;
-            crow.life--;
-
-            const dx = crow.x - this.target.x;
-            const dy = crow.y - this.target.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist < (this.target.size || 20) / 2) {
-                if (this.target && typeof this.target.takeDamage === 'function') {
-                    this.target.takeDamage(this.damage);
-                }
-                this.crows.splice(i, 1);
-            continue;
-            }
-
-            if (crow.life <= 0 ||
-                crow.x < 0 || crow.x > canvasWidth ||
-                crow.y < 0 || crow.y > canvasHeight) {
-            this.crows.splice(i, 1);
-            }
-        }
-    }
-
-    update(canvasWidth = 800, canvasHeight = 600) {
+    update(canvasWidth = 800, canvasHeight = 600, enemies, nextEnemyId) {
         const { dx, dy, dist } = this.distanceToTarget();
-
-        if (dist < this.safe_distance) {
-            this.moveAway(dx, dy, canvasWidth, canvasHeight);
-        }
+        
 
         if (dist <= this.vision_range) {
             this.summon_timer--;
             if (this.summon_timer <= 0) {
-            this.summonCrow();
-            this.summon_timer = this.summon_cooldown;
+                this.summonCrow(enemies, nextEnemyId, canvasWidth, canvasHeight);
+                this.summon_timer = this.summon_cooldown;
             }
         }
-
-        this.updateCrows(canvasWidth, canvasHeight);
     }
 
     draw() {
@@ -92,10 +53,5 @@ class Scarecrow extends Enemy {
 
         fill(139, 69, 19);
         rect(this.x - this.size / 4, this.y - this.size / 2, this.size / 2, this.size);
-
-        for (let crow of this.crows) {
-            fill(0);
-            ellipse(crow.x, crow.y, crow.size);
-        }
     }
 }
