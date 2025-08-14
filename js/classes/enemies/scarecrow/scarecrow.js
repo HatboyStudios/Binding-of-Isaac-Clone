@@ -31,12 +31,12 @@ class Scarecrow extends Enemy {
         const constrainedX = constrain(spawnX, crowSize / 2, canvasWidth - crowSize / 2);
         const constrainedY = constrain(spawnY, crowSize / 2, canvasHeight - crowSize / 2);
 
-        const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target);
+        // const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target);
         enemies.push(newCrow);
     }
 
     update(canvasWidth = 800, canvasHeight = 600, enemies, nextEnemyId) {
-        const { dx, dy, dist } = this.distanceToTarget();
+        const { dist } = this.distanceToTarget();
         
 
         if (dist <= this.vision_range) {

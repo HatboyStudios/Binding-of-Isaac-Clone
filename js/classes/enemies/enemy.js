@@ -13,29 +13,10 @@ class Enemy extends Collision {
     this.direction = p5.Vector.fromAngle(random(TWO_PI));
 
     this.toggle_health_bar = false;
+    this.walk_over = false;  
 
     this.buffs = buffs || [];
   }
-
-  // update(canvasWidth, canvasHeight, enemies, bullets) {
-  //   this.isDead();
-
-  //   this.attackCooldown = max(this.attackCooldown - 1, 0);
-
-  //   if (!this.direction || isNaN(this.direction.x) || isNaN(this.direction.y)) {
-  //     this.direction = p5.Vector.fromAngle(random(TWO_PI));
-  //   }
-
-  //   this.x += this.direction.x * this.speed;
-  //   this.y += this.direction.y * this.speed;
-
-  //   this.x = constrain(this.x, this.size / 2, canvasWidth - this.size / 2);
-  //   this.y = constrain(this.y, this.size / 2, canvasHeight - this.size / 2);
-
-  //   this.collider(enemies, bullets);
-  //   this.checkWallCollision(canvasWidth, canvasHeight);
-  //   this.updateBuffs();
-  // }
 
   takeDamage(amount) {
     this.toggle_health_bar = true;
@@ -115,6 +96,7 @@ class Enemy extends Collision {
 
     for (let other of enemies) {
       if (other === this) continue;
+      if (other instanceof Seed && other.type === "LINGER") continue;
 
       const half_size_A = this.size / 2;
       const half_size_B = other.size / 2;
@@ -124,6 +106,8 @@ class Enemy extends Collision {
 
       if (overlap_X && overlap_Y) {
         colliding.push(other);
+
+        if (this.walk_over || other.walk_over) continue;
 
         const overlap_amount_X = (half_size_A + half_size_B) - Math.abs(this.x - other.x);
         const overlap_amount_Y = (half_size_A + half_size_B) - Math.abs(this.y - other.y);
@@ -158,7 +142,7 @@ class Enemy extends Collision {
         const distance = Math.hypot(dx, dy);
         const minDistance = radiusA + radiusB;
 
-        if (distance < minDistance && distance > 0) {
+        if (!this.walk_over && distance < minDistance && distance > 0) {
             const overlap = minDistance - distance;
 
             const pushStrength = 1.2;
@@ -170,27 +154,25 @@ class Enemy extends Collision {
         }
     }
 
-   if (bullets && typeof bullets.length === "number") {
-    for (let i = bullets.length - 1; i >= 0; i--) {
-      const bullet = bullets[i];
+    if (bullets && typeof bullets.length === "number") {
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const bullet = bullets[i];
 
-      const half_size_A = this.size / 2;
-      const half_size_B = bullet.size / 2;
+        const half_size_A = this.size / 2;
+        const half_size_B = bullet.size / 2;
 
-      const overlap_X = Math.abs(this.x - bullet.x) < half_size_A + half_size_B;
-      const overlap_Y = Math.abs(this.y - bullet.y) < half_size_A + half_size_B;
+        const overlap_X = Math.abs(this.x - bullet.x) < half_size_A + half_size_B;
+        const overlap_Y = Math.abs(this.y - bullet.y) < half_size_A + half_size_B;
 
-      if (overlap_X && overlap_Y) {
-        if (typeof this.takeDamage === "function") {
-          this.takeDamage(bullet.damage);
+        if (overlap_X && overlap_Y) {
+          if (typeof this.takeDamage === "function") {
+            this.takeDamage(bullet.damage);
+          }
+
+          bullet.remove();
         }
-
-        bullet.remove();
       }
     }
-  }
-
-
     return colliding;
   }
 

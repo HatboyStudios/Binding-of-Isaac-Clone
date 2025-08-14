@@ -33,7 +33,8 @@ function setup() {
   for (let i = 0; i < 1; i++) {
     const x = random(0 + 30, width - 30); 
     const y = random(0 + 30, height - 30);
-    enemies.push(new Scarecrow(i, x, y, player));
+    enemies.push(new Spores(i, x, y, player));
+    enemies.push(new Pumpkin(i, x, y, player));
   }
 
   collectables.push(new Collectable(random(30, width - 30), random(30, height - 30), 30, {
