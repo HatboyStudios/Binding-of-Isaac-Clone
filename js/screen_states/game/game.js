@@ -4,11 +4,23 @@ function gameSetup() {
 
     bullets = new Group();
     player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
-    ranged_weapon = new Pistol(60);
-
+  
     for (let i = 0; i < 1; i++) {
-      enemies.push(new TeleportVine(i, 300, 300, player));
+      enemies.push(new ShotgunShooter(i, 300, 300, player));
     }
+
+    player_weapon = new Pistol(
+      player,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      40,
+      "Eldritch",
+      "Ribcage",
+      "Pestilent"
+    );
 
     console.log(enemies)
 
@@ -25,7 +37,7 @@ function gameSetup() {
 }
 
 function gameUpdate() {
-    if (ranged_weapon) ranged_weapon.handleWeaponInput();
+    if (player_weapon) player_weapon.handleWeaponInput();
 
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
@@ -57,41 +69,26 @@ function gameUpdate() {
 
     player.update();
     player.draw();
-}
 
-function switchWeapon(NewWeaponClass) {
-  if (ranged_weapon && ranged_weapon.ammo_manager) {
-    let oldManager = ranged_weapon.ammo_manager;
-    let newWeapon = new NewWeaponClass(oldManager.total_ammo);
+    if (player_weapon) {
+      player_weapon.drawInfo(10, 20);
+    }
 
-    newWeapon.ammo_manager.current_clip = oldManager.current_clip;
-    newWeapon.ammo_manager.is_reloading = oldManager.is_reloading;
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let b = bullets[i];
 
-    ranged_weapon = newWeapon;
-  } else {
-    ranged_weapon = new NewWeaponClass();
-  }
-}
+        if (!b.startX || !b.startY || !b.range) continue;
 
-function keyPressed() {
-  if (key === '1') {
-    switchWeapon(Pistol);
-    console.log("Switched to Normal Pistol");
-  }
-  else if (key === '2') {
-    switchWeapon(AutoPistol);
-    console.log("Switched to Auto Pistol");
-  }
-  else if (key === '3') {
-    switchWeapon(Rifle);
-    console.log("Switched to Rifle");
-  }
-  else if (key === '4') {
-    switchWeapon(Shotgun);
-    console.log("Switched to Shotgun");
-  }
-  else if (key === '5') {
-    switchWeapon(Sniper);
-    console.log("Switched to Sniper");
-  }
+        b.position.x += b.vel.x;
+        b.position.y += b.vel.y;
+
+        const dx = b.position.x - b.startX;
+        const dy = b.position.y - b.startY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+
+        if (dist > b.range) {
+            b.remove();
+        }
+    }
 }

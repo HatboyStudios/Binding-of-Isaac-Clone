@@ -18,7 +18,7 @@ class Enemy extends Collision {
 
     this.buffs = buffs || [];
 
-    this._hasHandledDeath = false; // added
+    this._hasHandledDeath = false; 
   }
 
   constrain(value, min, max) {
@@ -121,9 +121,11 @@ class Enemy extends Collision {
       rectMode(CORNER);
       rect(this.x - barWidth / 2, this.y - this.size / 2 - 10, barWidth, barHeight);
 
+
       fill(lerpColor(color('red'), color('blue'), healthPercent));
       const filledWidth = barWidth * healthPercent;
-      const startX = this.x + barWidth / 2 - filledWidth;
+      const startX = this.x - barWidth / 2;
+
       rect(startX, this.y - this.size / 2 - 10, filledWidth, barHeight);
 
       rectMode(CENTER);

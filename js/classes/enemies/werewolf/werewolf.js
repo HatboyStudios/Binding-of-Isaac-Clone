@@ -1,5 +1,5 @@
 class Werewolf extends Enemy {
-    constructor(id, x, y, target, max_health = 60, damage = 6, speed = 0.6, size = 30) {
+    constructor(id, x, y, target, max_health = 60, damage = 6, speed = 0.6, size = 30, canSplit = false) {
         super(x, y, max_health, damage, speed, size);
         this.id = id;
         this.target = target;
@@ -188,5 +188,72 @@ class Werewolf extends Enemy {
 
     handleDeath() {
         console.log(`Werewolf ${this.id} died.`);
+    }
+}
+
+class LitterWerewolf extends Werewolf {
+    constructor(id, x, y, target, canSplit = true) {
+        super(id, x, y, target, 60, 6, 0.6, 30); 
+        this.canSplit = canSplit;
+    }
+
+    update(canvasWidth, canvasHeight) {
+    if (this.isDead()) {
+        if (!this._hasHandledDeath) {
+            this.handleDeath();
+            this._hasHandledDeath = true;
+        }
+        return;
+    }
+
+    super.update(canvasWidth, canvasHeight);
+}
+
+    draw() {
+        super.draw();
+
+        if (this.state === 'AGGRO') {
+            const health_percent = Math.max(0, this.health / this.max_health);
+            const anger_level = 255 - health_percent * 255;
+            fill(255, 255, 19);
+            stroke(anger_level, 0, 0);
+            rect(this.x, this.y, this.size, this.size);
+            rectMode(CENTER);
+        } else {
+            fill(139, 69, 19);
+            noStroke();
+            rect(this.x, this.y, this.size, this.size);
+            rectMode(CENTER);
+        }
+    }
+
+   handleDeath() {
+        if (!this.canSplit) return;
+
+        console.log(`LitterWerewolf ${this.id} died and is spawning mini werewolf`);
+
+        let amount = Math.floor(random(2, 10));
+
+        for (let i = 0; i < amount; i++) {
+            const angle = (Math.PI * 2 * i) / 4;
+            const spawnX = this.x + Math.cos(angle) * 20;
+            const spawnY = this.y + Math.sin(angle) * 20;
+
+            const miniWerewolf = new Werewolf(
+                `mini-${this.id}-${i}`,
+                spawnX,
+                spawnY,
+                this.target,
+                20,
+                5,
+                1.2, 
+                20,
+                false 
+            );
+
+            miniWerewolf.state = "AGGRO"; 
+
+            enemies.push(miniWerewolf);
+        }
     }
 }

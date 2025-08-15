@@ -86,6 +86,13 @@ class Collision {
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
 
+                if (bullet.owner === this) {
+                    continue;
+                }
+                if (this instanceof Enemy && bullet.owner instanceof Enemy) {
+                    continue;
+                }
+
                 const half_size_A = this.size / 2;
                 const half_size_B = bullet.size / 2;
 

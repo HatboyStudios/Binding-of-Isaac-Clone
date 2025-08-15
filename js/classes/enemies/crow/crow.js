@@ -1,5 +1,5 @@
 class Crow extends Enemy {
-    constructor(id, x, y, target, summoner, max_health = 35, damage = 10, speed = 1.5, size = 15) {
+    constructor(id, x, y, target, summoner, max_health = 35, damage = 10, speed = 1.5, size = 15, can_be_froze) {
         super(x, y, max_health, damage, speed, size);
         this.id = id;
         this.player = target;
@@ -35,6 +35,8 @@ class Crow extends Enemy {
 
         this.MIN_CIRCLING_DISTANCE = 120; 
         this.lastWallAvoidTime = 0;
+
+       this.can_be_froze = can_be_froze; 
     }
 
     findDistance(target) {

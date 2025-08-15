@@ -372,9 +372,7 @@ class FastZombie extends Zombie {
 class SporeZombie extends Zombie {
     constructor(id, x, y, target) {
         super(id, x, y, target, 80, 6, 1.5, 22); 
-
         
-
         this.spore_active_radius = 50;
         this.spore_attack_radius = 90;
         this.spore_active = false;    

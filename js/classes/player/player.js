@@ -62,6 +62,17 @@ class Player {
             player_direction = 'right';
         }
 
+        let shootDir = null;
+        if (keyIsDown(UP_ARROW)) shootDir = 'up';
+        else if (keyIsDown(DOWN_ARROW)) shootDir = 'down';
+        else if (keyIsDown(LEFT_ARROW)) shootDir = 'left';
+        else if (keyIsDown(RIGHT_ARROW)) shootDir = 'right';
+
+        if (shootDir && this.shootTimer <= 0) {
+            player_weapon.fire(shootDir, this);
+            this.shootTimer = this.shootCooldown;
+        }
+
         this.x = constrain(this.x, this.size / 2, width - this.size / 2);
         this.y = constrain(this.y, this.size / 2, height - this.size / 2);
     }
@@ -200,6 +211,17 @@ class Player {
             if (this.health_timer <= 0) {
                 this.toggle_health_bar = false;
             }
+        }
+
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            const bullet = bullets[i]; 
+
+            if (bullet.owner && !(bullet.owner instanceof Player)) {
+                this.collides(bullet, (player, enemyBullet) => {
+                    player.takeDamage(enemyBullet.damage);
+                    bullets.remove();
+                });
+            } 
         }
     }
 
