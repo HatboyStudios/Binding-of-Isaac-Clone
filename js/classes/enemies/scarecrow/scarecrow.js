@@ -32,12 +32,11 @@ class Scarecrow extends Enemy {
         const constrainedX = constrain(spawnX, crowSize / 2, canvasWidth - crowSize / 2);
         const constrainedY = constrain(spawnY, crowSize / 2, canvasHeight - crowSize / 2);
 
-        // const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target);
-        // enemies.push(newCrow);
-        console.log("CROW")
+        const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target);
+        enemies.push(newCrow);
     }
 
-    update(canvasWidth = 800, canvasHeight = 600, enemies, nextEnemyId) {
+    update(canvasWidth, canvasHeight, enemies, nextEnemyId) {
         if (this.isDead()) {
             if (!this._hasHandledDeath) {
                 this.handleDeath();
@@ -61,7 +60,9 @@ class Scarecrow extends Enemy {
         super.draw();
 
         fill(139, 69, 19);
-        rect(this.x - this.size / 4, this.y - this.size / 2, this.size / 2, this.size);
+        noStroke();
+        rectMode(CENTER);
+        rect(this.x, this.y, this.size, this.size);
     }
 
     handleDeath() {

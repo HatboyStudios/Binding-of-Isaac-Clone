@@ -188,7 +188,7 @@ class Player {
         this.speed = this.base_speed;
         this.strength = this.base_strength;
         this.defense = this.base_defense;
-        this.range = this.base_range;
+        this.range = this.base_range;        
 
         this.modifiers.forEach(mod => this.applyModifier(mod));
         this.playerMovement();

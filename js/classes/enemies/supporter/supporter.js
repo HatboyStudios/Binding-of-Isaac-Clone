@@ -223,7 +223,7 @@ class Supporter extends Enemy {
         }
     }
 
-    update(canvasWidth = 800, canvasHeight = 600, enemies) {
+    update(canvasWidth, canvasHeight, enemies) {
         if (this.isDead()) {
             if (!this._hasHandledDeath) {
                 this.handleDeath();

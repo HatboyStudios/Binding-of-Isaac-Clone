@@ -158,7 +158,7 @@ class RootSeed extends Seed {
         this.isObstacle = false;
     }
 
-     takeDamage(amount) {
+    takeDamage(amount) {
         this.health -= amount;
         if (this.health <= 0) {
             this._destroy = true;
@@ -167,6 +167,14 @@ class RootSeed extends Seed {
     }
 
     update(canvasWidth, canvasHeight) {
+         if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
         const distToPlayer = Math.hypot(dx, dy);
@@ -223,5 +231,10 @@ class RootSeed extends Seed {
         fill(50, 120, 50);
         ellipse(this.x, this.y, this.size, this.size);
         pop();
+    }
+
+    
+    handleDeath() {
+        console.log(`Root Seed ${this.id} died.`);
     }
 }

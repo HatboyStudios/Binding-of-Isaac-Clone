@@ -88,7 +88,7 @@ class Slime extends Enemy {
         }
     }
 
-    update(canvasWidth = 800, canvasHeight = 600) {
+    update(canvasWidth, canvasHeight) {
         if (this.isDead()) {
             if (!this._hasHandledDeath) {
                 this.handleDeath();
@@ -123,7 +123,7 @@ class Slime extends Enemy {
         rect(this.x, this.y, this.size, this.size);
         rectMode(CENTER);
     }
-    
+
     handleDeath() {
         if (!this.canSplit) return;
 

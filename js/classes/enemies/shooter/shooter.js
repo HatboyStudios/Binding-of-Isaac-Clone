@@ -120,7 +120,7 @@ class Shooter extends Enemy {
         }
     }
 
-    update(canvasWidth = 800, canvasHeight = 600) {
+    update(canvasWidth, canvasHeight) {
         if (this.isDead()) {
             if (!this._hasHandledDeath) {
                 this.handleDeath();

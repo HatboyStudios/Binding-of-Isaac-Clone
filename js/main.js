@@ -23,18 +23,17 @@ let bullets;
 let timeFrozen;
 
 function setup() {
-  createCanvas(600, 600);
+  createCanvas(800, 450);
 
   bullets = new Group();
   player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
   ranged_weapon = new Pistol(60);
-      let x = random(0 + 30, width - 30); 
-    let y = random(0 + 30, height - 30);
 
   for (let i = 0; i < 1; i++) {
-    enemies.push(new TankBomber(i, x+100, y, player));
-    enemies.push(new Vine(i, x, y, player));
+    enemies.push(new Scarecrow(i, 300, 300, player));
   }
+
+  console.log(enemies)
 
   collectables.push(new Collectable(random(30, width - 30), random(30, height - 30), 30, {
     type: 'buff',
