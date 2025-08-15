@@ -20,16 +20,6 @@ class Cultist extends Enemy {
         this.patrol_target_y = y;
         this.patrol_timer = 0;
         this.patrol_interval = 180;
-
-        this.isDodging = false;
-this.dodgeDuration = 20;           // frames
-this.dodgeTimer = 0;
-
-this.dodgeCooldown = 120;          // frames between dodges
-this.dodgeCooldownTimer = 0;
-
-this.dodgeSpeedMultiplier = 2.5;   // dodge speed
-
     }
 
     targetDistance() {
@@ -84,48 +74,7 @@ this.dodgeSpeedMultiplier = 2.5;   // dodge speed
         }
     }
 
-    shouldDodge(bullets) {
-        if (this.dodgeCooldownTimer > 0) return false;
-        if (!bullets || bullets.length === 0) return false;
-              if (bullets.vel === undefined) return false;
-
-        for (let bullet of bullets) {
-            const dx = this.x - bullet.x;
-            const dy = this.y - bullet.y;
-            const dist = Math.hypot(dx, dy);
-
-            if (dist > 150) continue;
-
-            console.log(bullet.vel)
-            
-
-            const bulletMag = Math.hypot(bullet.vel.x, bullet.vel.y);
-            const bulletDir = { x: bullet.vel.x / bulletMag, y: bullet.vel.y / bulletMag };
-            const dirToCultist = { x: dx / dist, y: dy / dist };
-            const dot = bulletDir.x * dirToCultist.x + bulletDir.y * dirToCultist.y;
-            if (dot < -0.9) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    startDodge(dxToPlayer, dyToPlayer) {
-        this.isDodging = true;
-        this.dodgeTimer = this.dodgeDuration;
-        this.dodgeCooldownTimer = this.dodgeCooldown;
-
-        const dodgeAngle = Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2;
-        const angle = Math.atan2(dyToPlayer, dxToPlayer) + dodgeAngle;
-
-        this.dodgeVector = {
-            x: Math.cos(angle),
-            y: Math.sin(angle)
-        };
-    }
-
-    update(canvasWidth, canvasHeight, bullets) {
+    update(canvasWidth, canvasHeight) {
         if (this.isDead()) {
             if (!this._hasHandledDeath) {
                 this.handleDeath();
@@ -139,20 +88,6 @@ this.dodgeSpeedMultiplier = 2.5;   // dodge speed
 
         const { dx, dy, dist } = this.targetDistance();
         this.handleStates(dist);
-
-        if (this.isDodging) {
-            this.dodgeTimer--;
-            if (this.dodgeTimer <= 0) {
-                this.isDodging = false;
-            }
-            this.move(this.dodgeVector.x, this.dodgeVector.y, canvasWidth, canvasHeight, true, this.speed * this.dodgeSpeedMultiplier);
-            return;
-        }
-
-        if (this.shouldDodge(bullets)) {
-            this.startDodge(dx, dy);
-            return;
-        }
 
         switch (this.ENEMY_STATE) {
             case "ATTACK":
