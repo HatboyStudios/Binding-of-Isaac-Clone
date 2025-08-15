@@ -12,6 +12,9 @@ class Scarecrow extends Enemy {
         
         this.SPAWN_RADIUS = 50;
         this.no_collision_push = true;
+
+        this.crow_limit = 10;
+        this.current_crow = 0;
     }
 
     distanceToTarget() {
@@ -27,13 +30,19 @@ class Scarecrow extends Enemy {
 
         const spawnX = this.x + offsetX;
         const spawnY = this.y + offsetY;
-        
+
         const crowSize = 15;
         const constrainedX = constrain(spawnX, crowSize / 2, canvasWidth - crowSize / 2);
         const constrainedY = constrain(spawnY, crowSize / 2, canvasHeight - crowSize / 2);
 
-        const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target);
+        const newCrow = new Crow(nextId, constrainedX, constrainedY, this.target, this); 
+        this.current_crow += 1;
         enemies.push(newCrow);
+    }
+
+
+    onCrowDeath() {
+        this.current_crow -= 1;
     }
 
     update(canvasWidth, canvasHeight, enemies, nextEnemyId) {
@@ -47,7 +56,7 @@ class Scarecrow extends Enemy {
 
         const { dist } = this.distanceToTarget();
 
-        if (dist <= this.vision_range) {
+        if (dist <= this.vision_range && this.current_crow < this.crow_limit) {
             this.summon_timer--;
             if (this.summon_timer <= 0) {
                 this.summonCrow(enemies, nextEnemyId, canvasWidth, canvasHeight);
@@ -55,6 +64,7 @@ class Scarecrow extends Enemy {
             }
         }
     }
+
 
     draw() {
         super.draw();

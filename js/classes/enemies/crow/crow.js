@@ -1,8 +1,10 @@
 class Crow extends Enemy {
-    constructor(id, x, y, target, max_health = 35, damage = 10, speed = 1.5, size = 15) {
+    constructor(id, x, y, target, summoner, max_health = 35, damage = 10, speed = 1.5, size = 15) {
         super(x, y, max_health, damage, speed, size);
         this.id = id;
         this.player = target;
+
+        this.summoner = summoner
 
         this.VISION_RANGE = 120;
         this.AGGRO_RANGE = 300;
@@ -75,17 +77,15 @@ class Crow extends Enemy {
     handleCircling(canvasWidth, canvasHeight) {
         this.circlingTimer--;
 
-        // Angle adjustment with natural variation
         const angleVariation = (noise(this.circlingAngleNoiseOffset) - 0.5) * 0.03;
         this.circlingAngle += (this.CIRCLING_SPEED + angleVariation) * this.circlingSpeedModifier;
         this.circlingAngleNoiseOffset += 0.005;
 
         const { dx, dy, dist } = this.findDistance(this.player);
         this.circlingNoiseOffset += 0.01;
-        const radiusOffset = noise(this.circlingNoiseOffset) * 30;  // Slightly reduced
-        const currentRadius = this.CIRCLING_RADIUS + radiusOffset;
+        const radiusOffset = noise(this.circlingNoiseOffset) * 30; 
 
-        // Clamp circling center to ensure target stays within canvas
+        const currentRadius = this.CIRCLING_RADIUS + radiusOffset;
         const buffer = this.CIRCLING_RADIUS + this.size;
         const clampedPlayerX = constrain(this.player.x, buffer, canvasWidth - buffer);
         const clampedPlayerY = constrain(this.player.y, buffer, canvasHeight - buffer);
@@ -93,7 +93,6 @@ class Crow extends Enemy {
         let targetX = clampedPlayerX + Math.cos(this.circlingAngle) * currentRadius;
         let targetY = clampedPlayerY + Math.sin(this.circlingAngle) * currentRadius;
 
-        // Clamp target itself as extra safety
         targetX = constrain(targetX, this.size, canvasWidth - this.size);
         targetY = constrain(targetY, this.size, canvasHeight - this.size);
 
