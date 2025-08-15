@@ -54,6 +54,8 @@ class Scarecrow extends Enemy {
             return;
         }
 
+        console.log(this.current_crow)
+
         const { dist } = this.distanceToTarget();
 
         if (dist <= this.vision_range && this.current_crow < this.crow_limit) {

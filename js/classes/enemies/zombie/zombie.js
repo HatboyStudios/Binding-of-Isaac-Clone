@@ -351,20 +351,98 @@ class Zombie extends Enemy {
 }
 
 class TankZombie extends Zombie {
-  constructor(id, x, y, target) {
-    super(id, x, y, target, 150, 12, 0.6, 35);
-    this.no_collision_push = true;
-  }
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 150, 12, 0.6, 35);
+        this.no_collision_push = true;
+    }
 }
 
 class CrawlerZombie extends Zombie {
-  constructor(id, x, y, target) {
-    super(id, x, y, target, 60, 4, 1.2, 20);
-  }
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 60, 4, 1.2, 20);
+    }
 }
 
 class FastZombie extends Zombie {
-  constructor(id, x, y, target) {
-    super(id, x, y, target, 80, 6, 1.5, 22); 
-  }
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 80, 6, 1.5, 22); 
+    }
+}
+
+class SporeZombie extends Zombie {
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 80, 6, 1.5, 22); 
+
+        
+
+        this.spore_active_radius = 50;
+        this.spore_attack_radius = 90;
+        this.spore_active = false;    
+        this.spore_timer = 0;           
+        this.spore_cooldown = 240;       
+        this.spore_cooldown_timer = 0; 
+
+        this.spore_damage_interval = 45;  
+        this.spore_damage_timer = 0;
+    }
+
+    targetDistance() {
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        return {dx, dy, dist: Math.hypot(dx, dy)}
+    }
+
+    createSporesArea() {
+        if (this.spore_cooldown_timer <= 0 && !this.spore_active) {
+            this.spore_active = true;
+            this.spore_timer = 300;  
+            this.spore_cooldown_timer = this.spore_cooldown;
+            this.spore_damage_timer = 0;
+        }
+    }
+
+    updateSpores() {
+        if (this.spore_active) {
+            this.spore_timer--;
+            this.spore_damage_timer--;
+
+
+            if (this.spore_damage_timer <= 0) {
+                const { dist } = this.targetDistance();
+                if (dist <= this.spore_attack_radius) {
+                    this.target.takeDamage(this.damage);
+                }
+                this.spore_damage_timer = this.spore_damage_interval;
+            }
+
+            if (this.spore_timer <= 0) {
+                this.spore_active = false;
+            }
+        } else if (this.spore_cooldown_timer > 0) {
+            this.spore_cooldown_timer--;
+        }
+    }
+
+    update(canvasWidth, canvasHeight) {
+        super.update(canvasWidth, canvasHeight);
+
+        if (this.ENEMY_STATE === "ATTACK") {
+            this.createSporesArea();
+        }
+
+        this.updateSpores();
+    }
+
+    draw() {
+        super.draw();
+
+        if (this.spore_active) {
+            push();
+            noFill();
+            stroke(0, 255, 0, 150);
+            strokeWeight(3);
+            ellipse(this.x, this.y, this.spore_attack_radius * 2);
+            pop();
+        }
+    }
 }

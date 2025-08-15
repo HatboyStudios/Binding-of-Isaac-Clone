@@ -83,9 +83,10 @@ class Crow extends Enemy {
 
         const { dx, dy, dist } = this.findDistance(this.player);
         this.circlingNoiseOffset += 0.01;
-        const radiusOffset = noise(this.circlingNoiseOffset) * 30; 
 
+        const radiusOffset = noise(this.circlingNoiseOffset) * 30;
         const currentRadius = this.CIRCLING_RADIUS + radiusOffset;
+
         const buffer = this.CIRCLING_RADIUS + this.size;
         const clampedPlayerX = constrain(this.player.x, buffer, canvasWidth - buffer);
         const clampedPlayerY = constrain(this.player.y, buffer, canvasHeight - buffer);
@@ -131,6 +132,8 @@ class Crow extends Enemy {
     handleDive(canvasWidth, canvasHeight) {
         this.diveTimer--;
 
+        this.size = 20;
+
         this.x += this.diveDirection.x * this.DIVE_SPEED;
         this.y += this.diveDirection.y * this.DIVE_SPEED;
 
@@ -149,6 +152,7 @@ class Crow extends Enemy {
 
     endDive() {
         this.state = 'AGGRO';
+               this.size = 15;
         this.circlingTimer = this.CIRCLING_DURATION;
         this.circlingAngle = Math.atan2(this.y - this.player.y, this.x - this.player.x);
     }
@@ -174,7 +178,14 @@ class Crow extends Enemy {
         }
     }
 
-    update(canvasWidth = 800, canvasHeight = 400) {
+    update(canvasWidth, canvasHeight) {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
         this.transitionState();
         switch (this.state) {
             case 'TRANSITION':
@@ -196,5 +207,12 @@ class Crow extends Enemy {
         noStroke();
         rectMode(CENTER);
         rect(this.x, this.y, this.size, this.size);
+    }
+
+    handleDeath() {
+        console.log(`Crow ${this.id} died.`);
+        if (this.summoner && typeof this.summoner.onCrowDeath === 'function') {
+            this.summoner.onCrowDeath(); 
+        }
     }
 }
