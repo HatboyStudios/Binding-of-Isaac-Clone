@@ -150,3 +150,25 @@ class Slime extends Enemy {
         }
     }
 }
+
+class FastSlime extends Slime {
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 40, 15, 2, 30);
+    }
+
+    draw() {
+        super.draw();
+        fill(0, 255, 0);
+    }
+}
+
+class TankSlime extends Slime {
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 120, 40, 0.6, 50, false);
+    }
+
+    draw() {
+        super.draw();
+        fill(0, 100, 200);
+    }
+}

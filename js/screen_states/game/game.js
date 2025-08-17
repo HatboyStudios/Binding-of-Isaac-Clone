@@ -6,21 +6,12 @@ function gameSetup() {
     player = new Player(200, 200, 1, 100, 2, 50, 10, 5, 100);
   
     for (let i = 0; i < 1; i++) {
-      enemies.push(new ShotgunShooter(i, 300, 300, player));
+      enemies.push(new Zombie(i, 150, 150, player));
+      enemies.push(new FastZombie(i, 400, 400, player));
+      enemies.push(new TankZombie(i, 300, 300, player));
+      enemies.push(new CrawlerZombie(i, 100, 100, player));
+      enemies.push(new SporeZombie(i, 10, 10, player));
     }
-
-    player_weapon = new Pistol(
-      player,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      40,
-      "Eldritch",
-      "Ribcage",
-      "Pestilent"
-    );
 
     console.log(enemies)
 
@@ -37,7 +28,7 @@ function gameSetup() {
 }
 
 function gameUpdate() {
-    if (player_weapon) player_weapon.handleWeaponInput();
+    if (current_weapon) current_weapon.handleWeaponInput();
 
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
@@ -70,8 +61,8 @@ function gameUpdate() {
     player.update();
     player.draw();
 
-    if (player_weapon) {
-      player_weapon.drawInfo(10, 20);
+    if (current_weapon) {
+      current_weapon.drawInfo(10, 20);
     }
 
     for (let i = bullets.length - 1; i >= 0; i--) {

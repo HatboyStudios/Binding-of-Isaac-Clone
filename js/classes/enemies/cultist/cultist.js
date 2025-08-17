@@ -125,3 +125,162 @@ class Cultist extends Enemy {
         console.log(`Cultist ${this.id} died.`);
     }
 }
+
+class RapidCultist extends Cultist {
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 60, 15, 2, 25);
+        this.attack_rate = 20; 
+    }
+
+    draw() {
+        super.draw();
+        fill(255, 100, 50);
+        rect(this.x, this.y, this.size, this.size);
+    }
+
+    handleDeath() {
+        console.log(`RapidCultist ${this.id} died.`);
+    }
+}
+
+class TankCultist extends Cultist {
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 200, 35, 0.5, 40); 
+        this.patrol_radius = 100;
+    }
+
+    draw() {
+        super.draw();
+        fill(50, 50, 150);
+        rect(this.x, this.y, this.size, this.size);
+    }
+
+    handleDeath() {
+        console.log(`TankCultist ${this.id} died.`);
+    }
+}
+
+class MartyrCultist extends Cultist {
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 70, 0, 1.0, 30);
+        this.explode_range = 40;
+        this.explode_warning_time = 30;
+        this.has_exploded = false;
+        this.explosion_damage = 35;
+        this.speed = 1.9;
+    }
+
+    distanceToTarget() {
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        return { dx, dy, dist: Math.hypot(dx, dy) };
+    }
+
+    moveTowardsTarget(canvasWidth, canvasHeight) {
+        const { dx, dy, dist } = this.distanceToTarget();
+        if (dist === 0) return;
+
+        const dirX = dx / dist;
+        const dirY = dy / dist;
+
+        this.x += dirX * this.speed;
+        this.y += dirY * this.speed;
+
+        this.x = constrain(this.x, this.size / 2, canvasWidth - this.size / 2);
+        this.y = constrain(this.y, this.size / 2, canvasHeight - this.size / 2);
+    }
+
+    triggerExplosion() {
+        if (!this.has_exploded) {
+            this.has_exploded = true;
+            console.log(`MartyrCultist ${this.id} exploded!`);
+            this.target.takeDamage(this.explosion_damage);
+            this.health = 0;
+        }
+    }
+
+    update(canvasWidth, canvasHeight) {
+        if (this.isDead() || this.has_exploded) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
+        const { dx, dy, dist } = this.distanceToTarget();
+
+        this.moveTowardsTarget(canvasWidth, canvasHeight);
+
+        if (dist <= this.explode_range) {
+            this.triggerExplosion();
+        }
+    }
+
+    draw() {
+        super.draw();
+        fill(255, 50, 50);
+        rect(this.x, this.y, this.size, this.size);
+    }
+
+    handleDeath() {
+        console.log(`MartyrCultist ${this.id} died.`);
+    }
+}
+
+class ShooterCultist extends Cultist {
+    constructor(id, x, y, target) {
+        super(id, x, y, target, 70, 10, 1, 30);
+        this.shoot_cooldown = 60;
+        this.shoot_timer = this.shoot_cooldown;
+
+        const rarity = getRandomKey(WeaponTiers);
+        const material = getRandomKey(MaterialTiers);
+        const effect = getRandomEffect();
+
+        this.weapon = new AutoPistol(this, undefined, 5, undefined, 12, 40, rarity, material, effect);
+        this.vision_range = 300;
+        this.safe_distance = 120;
+    }
+
+    update(canvasWidth, canvasHeight) {
+        if (this.isDead()) {
+            if (!this._hasHandledDeath) {
+                this.handleDeath();
+                this._hasHandledDeath = true;
+            }
+            return;
+        }
+
+        const { dx, dy, dist } = this.targetDistance();
+        if (dist <= this.vision_range) {
+            if (dist < this.safe_distance) {
+                this.move(dx, dy, canvasWidth, canvasHeight, false);
+            } else {
+                this.move(dx, dy, canvasWidth, canvasHeight, true);
+            }
+
+            this.shoot_timer--;
+            if (this.shoot_timer <= 0) {
+                if (this.weapon.ammo_manager.current_ammo > 0) {
+                    this.weapon.fire({ x: dx, y: dy });
+                } else if (this.weapon.ammo_manager.total_ammo > 0) {
+                    this.weapon.reload();
+                }
+                this.shoot_timer = this.shoot_cooldown;
+            }
+        } else {
+            this.patrol(canvasWidth, canvasHeight);
+        }
+    }
+
+    draw() {
+        super.draw();
+        fill(0, 200, 255);
+        rect(this.x, this.y, this.size, this.size);
+    }
+
+    handleDeath() {
+        console.log(`ShooterCultist ${this.id} died.`);
+    }
+}

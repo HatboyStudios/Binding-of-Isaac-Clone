@@ -16,7 +16,7 @@ class Sniper extends RangedWeapon {
   }
 
   handleWeaponInput() {
-    if (keyIsDown(82)) this.reload();
+    super.handleWeaponInput();
 
     const dir = this.getInputDirection();
     if (dir) {

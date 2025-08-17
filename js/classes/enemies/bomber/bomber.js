@@ -10,10 +10,9 @@ class Bomber extends Enemy {
     this.vision_range = 160;
     this.patrol_radius = 300;
 
-    this.exploding = false;     
-    this.explode_timer = 0;        
-    this.hasExploded = false;      
-    this.dead = false;             
+    this.exploding = false;
+    this.explode_timer = 0;
+    this.has_exploded = false;
 
     this.patrol_center_x = x;
     this.patrol_center_y = y;
@@ -23,7 +22,9 @@ class Bomber extends Enemy {
     this.patrol_change_interval = 120;
     this.patrol_speed_multiplier = 0.75;
 
-    this.postExplosionTimer = 0;
+    this.post_explosion_timer = 0;
+    this.no_collision_push = true;
+    this._has_handled_death = false;
   }
 
   distanceToTarget() {
@@ -36,30 +37,29 @@ class Bomber extends Enemy {
     return this.distanceToTarget().dist <= this.vision_range;
   }
 
-  moveTowards(dx, dy, speedMult = 1, canvasWidth = 800, canvasHeight = 600) {
-    if (this.hasExploded || this.dead || (this.exploding && this.explode_timer <= 0)) return;
+  moveTowards(dx, dy, speed_mult = 1, canvasWidth = 800, canvasHeight = 600) {
+    if (this.has_exploded || this.exploding && this.explode_timer <= 0) return;
 
     const mag = Math.hypot(dx, dy);
     if (mag > 0) {
-      this.x = constrain(this.x + (dx / mag) * this.speed * speedMult, this.size / 2, canvasWidth - this.size / 2);
-      this.y = constrain(this.y + (dy / mag) * this.speed * speedMult, this.size / 2, canvasHeight - this.size / 2);
+      this.x = constrain(this.x + (dx / mag) * this.speed * speed_mult, this.size / 2, canvasWidth - this.size / 2);
+      this.y = constrain(this.y + (dy / mag) * this.speed * speed_mult, this.size / 2, canvasHeight - this.size / 2);
     }
   }
 
-  findNewTarget(canvasWidth, canvasHeight) {
-    let attempts = 0;
+  findNewPatrolTarget(canvasWidth, canvasHeight) {
     const margin = this.size;
-    while (attempts < 10) {
+    for (let i = 0; i < 10; i++) {
       const angle = Math.random() * Math.PI * 2;
       const radius = Math.random() * this.patrol_radius;
       const px = this.patrol_center_x + Math.cos(angle) * radius;
       const py = this.patrol_center_y + Math.sin(angle) * radius;
+
       if (px >= margin && px <= canvasWidth - margin && py >= margin && py <= canvasHeight - margin) {
         this.patrol_target_x = px;
         this.patrol_target_y = py;
         return;
       }
-      attempts++;
     }
     this.patrol_target_x = constrain(this.patrol_center_x, margin, canvasWidth - margin);
     this.patrol_target_y = constrain(this.patrol_center_y, margin, canvasHeight - margin);
@@ -70,15 +70,17 @@ class Bomber extends Enemy {
     const dx = this.patrol_target_x - this.x;
     const dy = this.patrol_target_y - this.y;
     const dist = Math.hypot(dx, dy);
+
     if (this.patrol_change_timer <= 0 || dist < 10) {
-      this.findNewTarget(canvasWidth, canvasHeight);
+      this.findNewPatrolTarget(canvasWidth, canvasHeight);
       this.patrol_change_timer = this.patrol_change_interval + Math.random() * 60;
     }
+
     this.moveTowards(dx, dy, this.patrol_speed_multiplier, canvasWidth, canvasHeight);
   }
 
   triggerExplosion() {
-    if (!this.exploding && !this.hasExploded) {
+    if (!this.exploding && !this.has_exploded) {
       this.exploding = true;
       this.explode_timer = this.explode_warning_time;
     }
@@ -89,33 +91,33 @@ class Bomber extends Enemy {
     this.explode_timer = 0;
   }
 
-  explode() {
+  explode(enemies) {
+    const multiplier = 2;
     for (let enemy of enemies) {
-      if (enemy === this) continue; 
-
-      const canBeDamaged = typeof enemy.takeDamage === 'function';
-      const distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
-
-      if (canBeDamaged && distance <= this.explode_range) {
-        enemy.takeDamage(this.damage * 2); 
+      if (enemy === this) continue;
+      if (typeof enemy.takeDamage === 'function') {
+        const distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+        if (distance <= this.explode_range) {
+          enemy.takeDamage(this.damage * multiplier);
+        }
       }
     }
   }
 
-  update(canvasWidth, canvasHeight) {
+  update(canvasWidth, canvasHeight, enemies) {
     if (this.isDead()) {
-      if (!this._hasHandledDeath) {
-          this.handleDeath();
-          this._hasHandledDeath = true;
+      if (!this._has_handled_death) {
+        this.handleDeath();
+        this._has_handled_death = true;
       }
       return;
     }
 
-    if (this.hasExploded) {
-      if (this.postExplosionTimer > 0) {
-          this.postExplosionTimer--;
+    if (this.has_exploded) {
+      if (this.post_explosion_timer > 0) {
+        this.post_explosion_timer--;
       } else {
-          this.dead = true;
+        this.health = 0;
       }
       return;
     }
@@ -124,22 +126,18 @@ class Bomber extends Enemy {
 
     if (this.exploding) {
       this.explode_timer--;
-
       this.moveTowards(dx, dy, this.patrol_speed_multiplier, canvasWidth, canvasHeight);
 
       if (this.explode_timer <= 0) {
-        if (dist <= this.explode_range) {
-          if (this.target && typeof this.target.takeDamage === 'function') {
-            this.target.takeDamage(this.damage * 2);
-          }
+        if (dist <= this.explode_range && typeof this.target.takeDamage === 'function') {
+          this.target.takeDamage(this.damage * 2);
         }
 
-        this.explode();
-
-        this.hasExploded = true;
+        this.explode(enemies);
+        this.has_exploded = true;
         this.exploding = false;
         this.explode_timer = 0;
-        this.postExplosionTimer = 90;
+        this.post_explosion_timer = 90;
         this.health = 0;
         return;
       }
@@ -159,53 +157,33 @@ class Bomber extends Enemy {
     }
   }
 
-
   draw() {
-    super.draw();
+    if (this.isDead() || this.has_exploded) return;
 
+    super.draw();
     rectMode(CENTER);
 
-    if (this.hasExploded) {
-      const t = this.postExplosionTimer;
-      if (t > 0) {
-        const s = this.size * (2 + (60 - t) * 0.1);
-        noStroke();
-        fill(255, 120, 0, 180);
-        ellipse(this.x, this.y, s);
-        fill(255, 60, 0, 120);
-        ellipse(this.x, this.y, this.explode_range);
-      }
-      return;
-    }
-
     if (this.exploding && this.explode_timer > 0) {
-      const time = millis() * 0.005;
-      const pulseIntensity = Math.sin(time) * 0.2 + 1;
-      const pulsedSize = this.size * pulseIntensity;
+        const time = millis() * 0.005;
+        const pulse = Math.sin(time) * 0.2 + 1;
+        const pulsed_size = this.size * pulse;
 
-      noStroke();
-      fill(50, 50, 50, 100);
-      rect(this.x, this.y, pulsedSize + 4, pulsedSize + 4);
+        noStroke();
+        fill(50, 50, 50, 100);
+        rect(this.x, this.y, pulsed_size + 4, pulsed_size + 4);
+        fill(0);
+        rect(this.x, this.y, pulsed_size, pulsed_size);
 
-      fill(0);
-      rect(this.x, this.y, pulsedSize, pulsedSize);
-
-      const redIntensity = Math.sin(time * 2) * 0.3 + 0.3;
-      stroke(255 * redIntensity, 0, 0, 150 * redIntensity);
-      noFill();
-      rect(this.x, this.y, pulsedSize, pulsedSize);
-
-      push();
-      noFill();
-      stroke(255, 100, 0, 150);
-      strokeWeight(2);
-      ellipse(this.x, this.y, this.explode_range * 2);
-      pop();
-
+        push();
+        noFill();
+        stroke(255, 100, 0, 150);
+        strokeWeight(2);
+        ellipse(this.x, this.y, this.explode_range * 2);
+        pop();
     } else {
-      fill(0); 
-      noStroke();
-      rect(this.x, this.y, this.size, this.size);
+        fill(0);
+        noStroke();
+        rect(this.x, this.y, this.size, this.size);
     }
 
     push();
@@ -219,7 +197,7 @@ class Bomber extends Enemy {
   handleDeath() {
     console.log(`Bomber ${this.id} died.`);
   }
-}
+  }
 
 class TankBomber extends Bomber {
   constructor(id, x, y, target) {
@@ -235,85 +213,53 @@ class TankBomber extends Bomber {
     this.vision_range = 180;
     this.patrol_radius = 250;
     this.patrol_speed_multiplier = 0.5;
-    this.explode_damage_multiplier = 1.4; 
+    this.explode_damage_multiplier = 1.4;
 
     this.no_collision_push = true;
   }
 
-  explode() {
+  explode(enemies) {
+    const multiplier = this.explode_damage_multiplier;
     for (let enemy of enemies) {
       if (enemy === this) continue;
-
-      const canBeDamaged = typeof enemy.takeDamage === 'function';
-      const distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
-
-      if (canBeDamaged && distance <= this.explode_range) {
-        enemy.takeDamage(this.damage * this.explode_damage_multiplier);
-      }
-    }
-  }
-
-  update(canvasWidth, canvasHeight) {
-    if (this.isDead()) {
-      if (!this._hasHandledDeath) {
-          this.handleDeath();
-          this._hasHandledDeath = true;
-      }
-      return;
-    }
-
-    if (this.hasExploded) {
-      if (this.postExplosionTimer > 0) {
-        this.postExplosionTimer--;
-      } else {
-        this.dead = true;
-      }
-      return;
-    }
-
-    const { dx, dy, dist } = this.distanceToTarget();
-
-    if (this.exploding) {
-      this.explode_timer--;
-
-      this.moveTowards(dx, dy, this.patrol_speed_multiplier, canvasWidth, canvasHeight);
-      if (this.explode_timer <= 0) {
-        if (dist <= this.explode_range) {
-          if (this.target && typeof this.target.takeDamage === 'function') {
-            this.target.takeDamage(this.damage * this.explode_damage_multiplier);
-          }
+      if (typeof enemy.takeDamage === 'function') {
+        const distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+        if (distance <= this.explode_range) {
+          enemy.takeDamage(this.damage * multiplier);
         }
-
-        this.explode();
-
-        this.hasExploded = true;
-        this.exploding = false;
-        this.explode_timer = 0;
-        this.postExplosionTimer = 120;
-        this.health = 0;
-        return;
       }
-
-      if (dist >= this.explode_range + 30) {
-        this.cancelExplosion();
-      }
-      return;
     }
-
-    if (dist < this.explode_range) {
-      this.triggerExplosion();
-    } else if (this.checkVision() || dist < this.aggro_range) {
-      this.moveTowards(dx, dy, 1, canvasWidth, canvasHeight);
-    } else {
-      this.patrol(canvasWidth, canvasHeight);
-    }
-  }
-
-  draw() {
-    super.draw();
   }
 
   handleDeath() {
     console.log(`Tank Bomber ${this.id} died.`);
   }
+}
+
+class DeathWishBomber extends Bomber {
+    constructor(id, x, y, target) {
+        super(id, x, y, target);
+        this.speed = 0.9;
+        this.damage = 35;
+        this.size = 25;
+        this.explode_range = 80;
+        this.explode_warning_time = 30;
+        this.patrol_speed_multiplier = 1.0;
+    }
+
+    update(canvasWidth, canvasHeight, enemies) {
+        if (!this.has_exploded) {
+            const { dx, dy } = this.distanceToTarget();
+            this.moveTowards(dx, dy, 1, canvasWidth, canvasHeight);
+
+            const { dist } = this.distanceToTarget();
+            if (dist < this.explode_range) this.triggerExplosion();
+        }
+
+        super.update(canvasWidth, canvasHeight, enemies);
+    }
+
+    handleDeath() {
+        console.log(`Suicide Bomber ${this.id} died.`);
+    }
 }

@@ -6,7 +6,9 @@ class Player {
         this.size = 30;
         this.level = level;
 
-        // Dynamic props
+        this.vel = { x: 0, y: 0 };
+        this.isShifting = false;
+
         this.base_health = base_health;
         this.health = base_health;
 
@@ -30,34 +32,57 @@ class Player {
         this.toggle_health_bar = false;
         this.health_timer = 0;
         this.health_duration = 90;
+
+        this.ammo_bag = {
+            pistol: 9999,
+            rifle: 90,
+            shotgun: 30,
+            sniper: 20
+        };
+
+        this.current_weapon = new Shotgun(this, {
+            powerTier: "Crude",
+            materialTier: "Bone",
+            effectType: "None", 
+            fireModes: ['dual', 'buck'],      
+        });
+
+        current_weapon = this.current_weapon;
     }
 
     playerMovement() {
-        const isMoving = keyIsDown('w') || keyIsDown('W') || keyIsDown('s') || keyIsDown('S') || keyIsDown('a') || keyIsDown('A') || keyIsDown('d') || keyIsDown('D');
+        const isMoving = keyIsDown(87) || keyIsDown(83) || keyIsDown(65) || keyIsDown(68);
 
-        if (keyIsDown('Shift') && this.stamina > 0 && isMoving) {
-            this.speed += 1.2;
+        if (keyIsDown(16) && this.stamina > 0 && isMoving) {
+            this.isShifting = true;
+            this.sprint_bonus = 1.2;
+            this.speed = this.base_speed + this.sprint_bonus;
             this.stamina -= 0.5;
         } else {
+            this.isShifting = false;
+            this.speed = this.base_speed;
             this.stamina = Math.min(this.stamina + 0.3, this.base_stamina);
         }
-        
-        if (keyIsDown('w') || keyIsDown('W')) {
+
+        this.new_max_speed = this.base_speed + this.sprint_bonus;
+
+
+        if (keyIsDown(87)) {
             this.y -= this.speed;
             player_direction = 'up';
         }
 
-        if (keyIsDown('s') || keyIsDown('S')) {
+        if (keyIsDown(83)) {
             this.y += this.speed;
             player_direction = 'down';
         }
 
-        if (keyIsDown('a') || keyIsDown('A')) {
+        if (keyIsDown(65)) {
             this.x -= this.speed;
             player_direction = 'left';
         }
 
-        if (keyIsDown('d') || keyIsDown('D')) {
+        if (keyIsDown(68)) {
             this.x += this.speed;
             player_direction = 'right';
         }
@@ -69,7 +94,7 @@ class Player {
         else if (keyIsDown(RIGHT_ARROW)) shootDir = 'right';
 
         if (shootDir && this.shootTimer <= 0) {
-            player_weapon.fire(shootDir, this);
+            current_weapon.fire(shootDir, this);
             this.shootTimer = this.shootCooldown;
         }
 

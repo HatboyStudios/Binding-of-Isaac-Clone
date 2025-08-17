@@ -12,7 +12,7 @@ var current_state = GAME_STATES.GAME;
 var background_color;
 
 var player;
-let player_weapon;
+let current_weapon;
 let enemies = [];
 let collectables = [];
 
